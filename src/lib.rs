@@ -1,3 +1,4 @@
+#[derive(PartialEq)]
 pub enum Token {
     INDENT,
     DEDENT,
@@ -44,7 +45,7 @@ pub enum Token {
 }
 
 pub struct Lexer {
-    pub input: String,
+    pub input: Vec<u8>,
     pub position: u32,
     pub read_position: u32,
     pub tokens: Vec<Token>,
@@ -57,7 +58,7 @@ impl Lexer {
             character: 0,
             position: 0,
             read_position: 0,
-            input: String::from(input),
+            input: input.into(),
             tokens: Vec::<Token>::new(),
         }
     }
@@ -71,7 +72,7 @@ impl Lexer {
         }
         self.position = self.read_position;
         self.read_position += 1;
-        Some(self.input.chars().nth(self.read_position as usize).unwrap() as u8)
+        Some(self.input[self.read_position as usize])
     }
 
     pub fn read_ident(&self) {
@@ -109,4 +110,20 @@ impl Lexer {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use crate::{Token, Lexer};
+
+    #[test]
+    fn if_sees_tokens() {
+        let mut l = Lexer::new("");
+        let data: Vec<(&str, Vec<Token>)> = vec![("variable_name", vec!(Token::IDENT))];
+
+        for entry in data {
+            l.input = entry.0.into();
+            l.tokenize();
+            assert!(l.tokens == entry.1)
+        }
+        
+    }
+
+}
