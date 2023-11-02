@@ -78,8 +78,13 @@ impl Lexer {
     }
 
     pub fn handle_next_whitespace(&mut self) {
-        // advance
-        self.position = self.read_position;
+        loop {
+            if self.read_position + 1 < self.input.len() && self.input[self.read_position + 1] == b' ' {
+                let _ = self.read_character();
+            } else {
+                break
+            }
+        }
     }
 
     pub fn read_character(&mut self) -> Result<(), ()> {
@@ -106,6 +111,10 @@ impl Lexer {
         if let Ok(()) = self.read_character() {
             let mut token: Option<Token> = None;
             match self.character {
+                b'=' => token = Some(Token::Equals),
+                b'0'..=b'9' => {
+                    todo!("handle numbers")
+                },
                 b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
                     let ident = self.read_ident();
                     match std::str::from_utf8(&ident).unwrap() {
@@ -117,7 +126,7 @@ impl Lexer {
                     }
                 }
                 0 => token = Some(Token::Eof),
-                _ => unreachable!("shouldn't reach this"),
+                char => unreachable!("shouldn't reach this, tried to match {:}", char as char),
             }
             self.tokens.push(token.unwrap());
             return true;
@@ -162,6 +171,7 @@ mod tests {
         for e in exps {
             let mut l = Lexer::new(e.0.into());
             l.tokenize();
+            println!("Need: {:?}, found {:?}", e.1, l.tokens);
             assert!(l.tokens == e.1)
         }
     }
