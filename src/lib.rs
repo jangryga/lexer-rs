@@ -1,47 +1,58 @@
 #[derive(PartialEq, Debug)]
 pub enum Token {
-    INDENT,
-    DEDENT,
-    DEF,
-    FROM,
-    IMPORT,
+    Indent,
+    Dedent,
+    Def,
+    From,
+    Import,
 
-    IF,
-    ELSE,
-    ELIF,
-    FOR,
-    WHILE,
-    COLON,
+    If,
+    Else,
+    Elif,
+    For,
+    While,
+    Colon,
 
-    PLUS,
-    MINUS,
-    DIV,
-    MUL,
+    Plus,
+    Minus,
+    Div,
+    Mul,
+    Equals,
+    DoubleEquals,
+    NotDoubleEquals,
 
-    FALSE,
-    TRUE,
+    False,
+    True,
 
-    CONTINUE,
-    BREAK,
-    DEL,
-    GLOBAL,
+    Continue,
+    Break,
+    Del,
+    
+    Global,
+    Local,
+    Nonlocal,
 
-    TRY,
-    RAISE,
-    EXCEPT,
-    FINALLY,
-    AS,
+    Try,
+    Except,
+    As,
+    Finally,
+    Raise,
 
-    IN,
-    IS,
-    LAMBDA,
-    RETURN,
-    WITH,
-    YIELD,
+    In,
+    Is,
+    Lambda,
+    Return,
+    With,
+    Yield,
 
-    IDENT(String),
+    Ident(String),
 
-    EOF,
+    Dict,
+    List,
+    Min,
+    Max,
+
+    Eof,
 }
 
 pub struct Lexer {
@@ -96,14 +107,14 @@ impl Lexer {
                 b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
                     let ident = self.read_ident();
                     match std::str::from_utf8(&ident).unwrap() {
-                        "def" => token = Some(Token::DEF),
+                        "def" => token = Some(Token::Def),
                         val => {
-                            token = Some(Token::IDENT(String::from(val)));
+                            token = Some(Token::Ident(String::from(val)));
                             println!("FOUND: {:?}", token);
                         },
                     }
                 }
-                0 => token = Some(Token::EOF),
+                0 => token = Some(Token::Eof),
                 _ => unreachable!("shouldn't reach this"),
             }
             self.tokens.push(token.unwrap());
@@ -129,8 +140,8 @@ mod tests {
     #[test]
     fn if_sees_tokens() {
         let data: Vec<(&str, Vec<Token>)> = vec![
-            ("variable_name", vec![Token::IDENT("variable_name".to_string())]),
-            ("def", vec![Token::DEF])
+            ("variable_name", vec![Token::Ident("variable_name".to_string())]),
+            ("def", vec![Token::Def])
         ];
 
         for entry in data {
