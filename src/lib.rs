@@ -47,6 +47,8 @@ pub enum Token {
 
     Ident(String),
 
+    Float,
+    Int,
     Dict,
     List,
     Min,
@@ -138,16 +140,29 @@ mod tests {
     use crate::{Lexer, Token};
 
     #[test]
-    fn if_sees_tokens() {
-        let data: Vec<(&str, Vec<Token>)> = vec![
+    fn individual_tokens() {
+        let exps = vec![
             ("variable_name", vec![Token::Ident("variable_name".to_string())]),
             ("def", vec![Token::Def])
         ];
 
-        for entry in data {
-            let mut l = Lexer::new(entry.0.into());
+        run_tests(exps)
+    }
+
+    #[test]
+    fn one_line_expressions() {
+        let exps = vec![
+            ("x = 10", vec![Token::Ident("x".to_string()), Token::Equals, Token::Int])
+        ];
+
+        run_tests(exps)
+    }
+
+    fn run_tests(exps: Vec<(&str, Vec<Token>)>) {
+        for e in exps {
+            let mut l = Lexer::new(e.0.into());
             l.tokenize();
-            assert!(l.tokens == entry.1)
+            assert!(l.tokens == e.1)
         }
     }
 }
