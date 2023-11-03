@@ -57,14 +57,14 @@ pub enum Token {
     Yield(TokenCategory),
 
     // Special methods (commonly used(TokenCategory), but not reserved keywords)
-    Init(TokenCategory), // __init__
-    New(TokenCategory),    // __new__
-    Delitem(TokenCategory), // __delitem__
-    Getitem(TokenCategory), // __getitem__
-    Setitem(TokenCategory),    // __setitem__
-    Str(TokenCategory),    // __str__
-    Repr(TokenCategory),   // __repr__
-    Len(TokenCategory),    // __repr__
+    Init(TokenCategory),           // __init__
+    New(TokenCategory),            // __new__
+    Delitem(TokenCategory),        // __delitem__
+    Getitem(TokenCategory),        // __getitem__
+    Setitem(TokenCategory),        // __setitem__
+    Str(TokenCategory),            // __str__
+    Repr(TokenCategory),           // __repr__
+    Len(TokenCategory),            // __len__
     // Special cases
     Name(TokenCategory),           // __name__
     Doc(TokenCategory),            // __doc__
