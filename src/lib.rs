@@ -1,3 +1,5 @@
+
+
 #[derive(PartialEq, Debug)]
 pub enum Token {
     Indent,
@@ -17,8 +19,10 @@ pub enum Token {
     Minus,
     Div,
     Mul,
+    Pow,
     Equals,
     DoubleEquals,
+    Bang,
     NotDoubleEquals,
 
     False,
@@ -47,9 +51,9 @@ pub enum Token {
     Yield,
 
     Ident(String),
-
-    Float(String),
-    Int(String),
+    Number(String),
+    Float,
+    Int,
     Dict,
     List,
     Min,
@@ -113,6 +117,13 @@ impl Lexer {
         String::from_utf8_lossy(&self.input[pos..self.position]).to_string()
     }
 
+    pub fn peek(&mut self) -> Option<u8> {
+        if self.read_position >= self.input.len() {
+            return None
+        } 
+        Some(self.input[self.read_position])
+    }
+
     pub fn tokenize_next_character(&mut self) -> Result<Token, ()> {
         self.handle_next_whitespace();
 
@@ -120,8 +131,36 @@ impl Lexer {
             b'=' => Token::Equals,
             b'0'..=b'9' => {
                 let num = self.read_num();
-                Token::Int(num)
+                Token::Number(num)
             },
+            b':' => Token::Colon,
+            b'+' => Token::Plus,
+            b'-' => Token::Minus,
+            b'/' => Token::Div,
+            b'*' => {
+                if self.peek() == Some(b'*') {
+                    self.read_character();
+                    Token::Pow
+                } else {
+                    Token::Mul
+                }
+            },
+            b'=' => {
+                if self.peek() == Some(b'=') {
+                    self.read_character();
+                    Token::DoubleEquals
+                } else {
+                    Token::Equals
+                }
+            },
+            b'!' => {
+                if self.peek() == Some(b'=') {
+                    self.read_character();
+                    Token::NotDoubleEquals
+                } else {
+                    Token::Bang
+                }
+            }
             b'\n' => {
                 Token::Newline
             },
@@ -129,6 +168,33 @@ impl Lexer {
                 let ident = self.read_ident();
                 return Ok(match ident.as_str() {
                     "def" => Token::Def,
+                    "from" => Token::From,
+                    "import" => Token::Import,
+                    "if" => Token::If,
+                    "else" => Token::Else,
+                    "elif" => Token::Elif,
+                    "for" => Token::For,
+                    "while" => Token::While,
+                    "False" => Token::False,
+                    "True" => Token::True,
+                    "continue" => Token::Continue,
+                    "break" => Token::Break,
+                    "del" => Token::Del,
+                    "global" => Token::Global,
+                    "local" => Token::Local,
+                    "nonlocal" => Token::Nonlocal,
+                    "try" => Token::Try,
+                    "except" => Token::Except,
+                    "as" => Token::As,
+                    "finally" => Token::Finally,
+                    "is" => Token::Is,
+                    "in" => Token::In,
+                    "not" => Token::Not,
+                    "lambda" => Token::Lambda,
+                    "return" => Token::Return,
+                    "with" => Token::With,
+                    "yield" => Token::Yield,
+                    
                     _ => {
                         Token::Ident(ident)
                     },
@@ -159,7 +225,8 @@ mod tests {
     fn single_tokens() {
         let exps = vec![
             ("variable_name", vec![Token::Ident(String::from("variable_name"))]),
-            ("def", vec![Token::Def])
+            ("def", vec![Token::Def]),
+            ("**", vec![Token::Pow])
         ];
         run_tests(exps)
     }
@@ -172,7 +239,7 @@ mod tests {
                 vec![
                     Token::Ident(String::from("x")),
                     Token::Equals, 
-                    Token::Int(String::from("10"))
+                    Token::Number(String::from("10"))
                 ]
             )
         ];
