@@ -1,7 +1,7 @@
 ## Working on:
 ### Parser
 - [ ] handle indents
-- [x] detect strings
+- [ ] detect strings
 - [ ] detect string templates
 - [ ] detect dunder methods
 
