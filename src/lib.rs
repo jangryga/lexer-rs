@@ -56,6 +56,7 @@ pub enum Token {
     Max,
 
     Eof,
+    Newline
 }
 
 pub struct Lexer {
@@ -68,86 +69,84 @@ pub struct Lexer {
 
 impl Lexer {
     pub fn new(input: &str) -> Lexer {
-        Lexer {
+        let mut lex = Lexer {
             character: 0,
             position: 0,
             read_position: 0,
             input: input.into(),
             tokens: Vec::<Token>::new(),
-        }
+        };
+        lex.read_character();
+        lex
     }
 
     pub fn handle_next_whitespace(&mut self) {
-        loop {
-            if self.read_position < self.input.len() && self.input[self.read_position] == b' ' {
-                let _ = self.read_character();
-                self.position += 1;
-            } else {
-                break
-            }
+        while self.read_position < self.input.len() && self.input[self.read_position].is_ascii_whitespace() {
+            self.read_character();
         }
     }
 
-    pub fn read_character(&mut self) -> Result<(), ()> {
-        if self.read_position == self.input.len() {
-            return Err(());
+    pub fn read_character(&mut self) {
+        if self.read_position >= self.input.len() {
+            self.character = 0;
+        } else {
+            self.character = self.input[self.read_position];
         }
-        self.character = self.input[self.read_position];
+        self.position = self.read_position;
         self.read_position += 1;
-        Ok(())
     }
 
-    pub fn read_ident(&mut self) -> Vec<u8> {
-        let mut reached_end = false;
-        while self.character != b' ' {
-            match self.read_character() {
-                Err(_) => {
-                    reached_end = true;
-                    break
-                },
-                Ok(_) => continue
-            }
+    pub fn read_ident(&mut self) -> String {
+        let pos = self.position;
+        while self.character.is_ascii_alphanumeric() || self.character == b'_' {
+            self.read_character();
         }
-        if reached_end {
-            return self.input[self.position..self.read_position].to_vec();
-        }
-        return self.input[self.position..self.read_position-1].to_vec()
+
+        String::from_utf8_lossy(&self.input[pos..self.position]).to_string()
     }
 
-    pub fn tokenize_next_character(&mut self) {
+    pub fn read_num(&mut self) -> String {
+        let pos = self.position;
+        while self.character.is_ascii_digit() {
+            self.read_character();
+        }
+        String::from_utf8_lossy(&self.input[pos..self.position]).to_string()
+    }
+
+    pub fn tokenize_next_character(&mut self) -> Result<Token, ()> {
         self.handle_next_whitespace();
-        let mut token: Option<Token> = None;
-        if let Err(_) = self.read_character() {
-            return
-        }
-        match self.character {
-            b'=' => token = Some(Token::Equals),
+
+        let token = match self.character {
+            b'=' => Token::Equals,
             b'0'..=b'9' => {
-                let number = self.read_ident();
-                token = Some(Token::Int(String::from(std::str::from_utf8(&number).unwrap())))
+                let num = self.read_num();
+                Token::Int(num)
+            },
+            b'\n' => {
+                Token::Newline
             },
             b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
                 let ident = self.read_ident();
-                match std::str::from_utf8(&ident).unwrap() {
-                    "def" => token = Some(Token::Def),
-                    val => {
-                        token = Some(Token::Ident(String::from(val)));
+                return Ok(match ident.as_str() {
+                    "def" => Token::Def,
+                    _ => {
+                        Token::Ident(ident)
                     },
-                }
+                })
             }
-            0 => token = Some(Token::Eof),
+            0 => Token::Eof,
             char => unreachable!("shouldn't reach this, tried to match {} \n tokens: {:?}", char as char, self.tokens),
-        }
-        self.tokens.push(token.unwrap());
+        };
+        
+        self.read_character();
+        Ok(token)
     }
 
-    pub fn tokenize(&mut self) {
-        loop {
-            if self.read_position == self.input.len() {
-                break
+    pub fn tokenize_input(&mut self) {
+        while self.read_position <= self.input.len() {
+            if let Ok(token) = self.tokenize_next_character() {
+                self.tokens.push(token);
             }
-            self.tokenize_next_character();
-            self.position = self.read_position
         }
     }
 }
@@ -157,30 +156,35 @@ mod tests {
     use crate::{Lexer, Token};
 
     #[test]
-    fn individual_tokens() {
+    fn single_tokens() {
         let exps = vec![
-            ("variable_name", vec![Token::Ident("variable_name".to_string())]),
+            ("variable_name", vec![Token::Ident(String::from("variable_name"))]),
             ("def", vec![Token::Def])
         ];
-
         run_tests(exps)
     }
 
     #[test]
     fn one_line_expressions() {
         let exps = vec![
-            ("x =   10", vec![Token::Ident("x".to_string()), Token::Equals, Token::Int("10".to_string())])
+            (
+                "x=10", 
+                vec![
+                    Token::Ident(String::from("x")),
+                    Token::Equals, 
+                    Token::Int(String::from("10"))
+                ]
+            )
         ];
-
         run_tests(exps)
     }
 
     fn run_tests(exps: Vec<(&str, Vec<Token>)>) {
         for e in exps {
-            let mut l = Lexer::new(e.0.into());
-            l.tokenize();
-            println!("Need: {:?}, found {:?}", e.1, l.tokens);
-            assert!(l.tokens == e.1)
+            let mut lex = Lexer::new(e.0.into());
+            lex.tokenize_input();
+            println!("Need: {:?}, found {:?}", e.1, lex.tokens);
+            assert!(lex.tokens == e.1)
         }
     }
 }
