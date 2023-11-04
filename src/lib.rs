@@ -346,7 +346,7 @@ impl Lexer {
             },
             b'0'..=b'9' => {
                 let num = self.read_num();
-                Token::Ident(num)
+                return Ok(Token::Ident(num))
             },
             b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
                 let ident = self.read_ident();
@@ -403,12 +403,10 @@ impl Lexer {
         let mut indent_length = 0;
         let initial = self.current_indent;
 
-        while self.read_position < self.input.len() && self.input[self.read_position].is_ascii_whitespace() {
+        while self.read_position < self.input.len() && self.input[self.read_position] == b' ' {
             self.read_character();
             indent_length += 1;
         }
-
-        println!("indent_length is {}", indent_length);
 
         self.current_indent = indent_length;
         indent_length - initial
@@ -520,7 +518,7 @@ mod tests {
         Token::Dedent(-4),
         Token::Newline,
         Token::Ident(String::from("res")),
-        Token::Assign(TokenCategory::Comparison),
+        Token::Assign(TokenCategory::Operators),
         Token::Ident(String::from("my_func")),
         Token::LeftParenthesis(TokenCategory::PunctuationAndGroup),
         Token::Ident(String::from("1")),

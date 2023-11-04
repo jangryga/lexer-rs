@@ -4,6 +4,7 @@
 - [ ] detect strings
 - [ ] detect string templates
 - [ ] detect dunder methods
+- [ ] tabs support
 
 ### Wasm adapter
 inc.
