@@ -197,6 +197,7 @@ pub enum Token {
     XorEqual(TokenCategory),         // ^=
     ShiftLeftEqual(TokenCategory),   // <<=
     ShiftRightEqual(TokenCategory),  // >>=
+    Assign(TokenCategory),           // =
 
     // Comparison and logical operators
     Equal(TokenCategory),            // ==
@@ -214,7 +215,6 @@ pub enum Token {
     BitwiseNot(TokenCategory),       // ~
     ShiftLeft(TokenCategory),        // <<
     ShiftRight(TokenCategory),       // >>
-    Assign(TokenCategory),           // =
 
     Eof,
     Ident(String),
@@ -285,9 +285,8 @@ impl Lexer {
                     match val {
                         b'+' => Token::Increment(TokenCategory::Operators),
                         b'=' => Token::PlusEqual(TokenCategory::Operators),
-                        _ => unreachable!("Shouldn't reach this on '+'")
+                        _ => unreachable!("Shouldn't reach this on '+', got {}", val as char)
                     }
-                    
                 } else {
                     Token::Plus(TokenCategory::Operators)
                 }
@@ -314,7 +313,7 @@ impl Lexer {
                     self.read_character();
                     Token::Equal(TokenCategory::Comparison)
                 } else {
-                    Token::Assign(TokenCategory::Comparison)
+                    Token::Assign(TokenCategory::Operators)
                 }
             },
             b'!' => {
@@ -380,11 +379,12 @@ impl Lexer {
                     "with" => Token::With(TokenCategory::Keyword),
                     "yield" => Token::Yield(TokenCategory::Keyword),
                     "pass" => Token::Pass(TokenCategory::Keyword),
+                    "print" => Token::Print(TokenCategory::BuiltInFn),
                     _ => {
                         Token::Ident(ident)
                     },
                 })
-            }
+            },
             0 => Token::Eof,
             char => unreachable!("shouldn't reach this, tried to match {} \n tokens: {:?}", char as char, self.tokens),
         };
@@ -394,7 +394,7 @@ impl Lexer {
     }
 
     pub fn handle_next_whitespace(&mut self) {
-        while self.read_position < self.input.len() && self.input[self.read_position].is_ascii_whitespace() {
+        while self.read_position < self.input.len() && self.character == b' ' {
             self.read_character();
         }
     }
@@ -407,6 +407,8 @@ impl Lexer {
             self.read_character();
             indent_length += 1;
         }
+
+        println!("indent_length is {}", indent_length);
 
         self.current_indent = indent_length;
         indent_length - initial
@@ -427,7 +429,6 @@ impl Lexer {
         while self.character.is_ascii_alphanumeric() || self.character == b'_' {
             self.read_character();
         }
-
         String::from_utf8_lossy(&self.input[pos..self.position]).to_string()
     }
 
@@ -440,7 +441,7 @@ impl Lexer {
     }
 
     pub fn peek(&mut self) -> Option<u8> {
-        if self.read_position >= self.input.len() {
+        if self.read_position >= self.input.len() || self.input[self.read_position] == b' ' {
             return None
         } 
         Some(self.input[self.read_position])
@@ -472,24 +473,81 @@ mod tests {
         let exps = vec![
             ("variable_name", vec![Token::Ident(String::from("variable_name"))]),
             ("def", vec![Token::Def(TokenCategory::Keyword)]),
-            ("**", vec![Token::Power(TokenCategory::Operators)])
+            ("**", vec![Token::Power(TokenCategory::Operators)]),
+            ("my_func", vec![Token::Ident(String::from("my_func"))])
         ];
         run_tests(exps)
     }
 
     #[test]
     fn one_line_expressions() {
-        let exps = vec![
-            (
-                "x=10", 
-                vec![
-                    Token::Ident(String::from("x")),
-                    Token::Assign(TokenCategory::Comparison), 
-                    Token::Ident(String::from("10"))
-                ]
-            )
+        let tokens = vec![
+            Token::Def(TokenCategory::Keyword),
+            Token::Ident(String::from("my_func")),
+            Token::LeftParenthesis(TokenCategory::PunctuationAndGroup),
+            Token::Ident(String::from("a")),
+            Token::Comma(TokenCategory::PunctuationAndGroup),
+            Token::Ident(String::from("b")),
+            Token::RightParenthesis(TokenCategory::PunctuationAndGroup),
+            Token::Colon(TokenCategory::PunctuationAndGroup),
         ];
-        run_tests(exps)
+        run_tests_explicit("def my_func(a, b):", tokens);
+    }
+
+    #[test]
+    fn multiline() {
+        let input = r#"def my_func(a, b):
+        return a + b
+    
+    res = my_func(1, 32)
+    print(res)
+    "#;
+    
+    let tokens = vec![
+        Token::Def(TokenCategory::Keyword),
+        Token::Ident(String::from("my_func")),
+        Token::LeftParenthesis(TokenCategory::PunctuationAndGroup),
+        Token::Ident(String::from("a")),
+        Token::Comma(TokenCategory::PunctuationAndGroup),
+        Token::Ident(String::from("b")),
+        Token::RightParenthesis(TokenCategory::PunctuationAndGroup),
+        Token::Colon(TokenCategory::PunctuationAndGroup),
+        Token::Indent(4),
+        Token::Return(TokenCategory::Keyword),
+        Token::Ident(String::from("a")),
+        Token::Plus(TokenCategory::Operators),
+        Token::Ident(String::from("b")),
+        Token::Dedent(-4),
+        Token::Newline,
+        Token::Ident(String::from("res")),
+        Token::Assign(TokenCategory::Comparison),
+        Token::Ident(String::from("my_func")),
+        Token::LeftParenthesis(TokenCategory::PunctuationAndGroup),
+        Token::Ident(String::from("1")),
+        Token::Comma(TokenCategory::PunctuationAndGroup),
+        Token::Ident(String::from("32")),
+        Token::RightParenthesis(TokenCategory::PunctuationAndGroup),
+        Token::Newline,
+        Token::Print(TokenCategory::BuiltInFn),
+        Token::LeftParenthesis(TokenCategory::PunctuationAndGroup),
+        Token::Ident(String::from("res")),
+        Token::RightParenthesis(TokenCategory::PunctuationAndGroup),
+        Token::Newline
+    ];
+
+    run_tests_explicit(input, tokens);
+
+    }
+
+    fn run_tests_explicit(input: &str, tokens: Vec<Token>) {
+        let mut lexer = Lexer::new(input);
+        lexer.current_indent = 4;
+
+        for token in tokens {
+            let current = lexer.tokenize_next_character();
+            println!("{:?} {:?}", token, current);
+            assert!(token == current.unwrap());
+        }
     }
 
     fn run_tests(exps: Vec<(&str, Vec<Token>)>) {
