@@ -1,8 +1,8 @@
 ## Working on:
 ### Parser
-- [ ] handle indents
-- [ ] detect strings
-- [ ] detect string templates
+- [x] handle indents
+- [ ] detect comments
+- [ ] detect comment (templates)
 - [ ] detect dunder methods
 - [ ] tabs support
 
