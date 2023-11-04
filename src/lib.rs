@@ -15,8 +15,8 @@ pub enum TokenKind {
 
 #[derive(PartialEq, Debug)]
 pub enum Token {
-    Intend(u32),
-    Dedent(u32),
+    Indent(i32),
+    Dedent(i32),
 
     // Standard keywords
     False(TokenCategory),
@@ -225,6 +225,7 @@ pub struct Lexer {
     pub input: Vec<u8>,
     pub position: usize,
     pub read_position: usize,
+    pub current_indent: i32,
     pub tokens: Vec<Token>,
     pub character: u8,
 }
@@ -235,6 +236,7 @@ impl Lexer {
             character: 0,
             position: 0,
             read_position: 0,
+            current_indent: 0,
             input: input.into(),
             tokens: Vec::<Token>::new(),
         };
@@ -336,7 +338,12 @@ impl Lexer {
                 }
             }
             b'\n' => {
-                Token::Newline
+                match self.indent_diff() {
+                    val if val > 0 => Token::Indent(val),
+                    val if val < 0 => Token::Dedent(val),
+                    0 => Token::Newline,
+                    _ => unreachable!("Broke numbers")
+                }
             },
             b'0'..=b'9' => {
                 let num = self.read_num();
@@ -390,6 +397,19 @@ impl Lexer {
         while self.read_position < self.input.len() && self.input[self.read_position].is_ascii_whitespace() {
             self.read_character();
         }
+    }
+
+    pub fn indent_diff(&mut self) -> i32 {
+        let mut indent_length = 0;
+        let initial = self.current_indent;
+
+        while self.read_position < self.input.len() && self.input[self.read_position].is_ascii_whitespace() {
+            self.read_character();
+            indent_length += 1;
+        }
+
+        self.current_indent = indent_length;
+        indent_length - initial
     }
 
     pub fn read_character(&mut self) {
