@@ -1,7 +1,58 @@
 use wasm_bindgen::prelude::*;
+use serde::{Serialize, Deserialize};
 
 #[wasm_bindgen]
-#[derive(PartialEq, Debug)]
+extern {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+}
+
+#[wasm_bindgen(typescript_custom_section)]
+const TS_TOKEN_INTERFACE: &'static str = r#"
+export interface Token {
+  kind: TokenType;
+  value?: string; // `value` is optional because it's an Option<String> in Rust
+  category: TokenCategory;
+}
+"#;
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(typescript_type = "Token[]")]
+    pub type Tokens;
+
+    // Use JsValue for representing an array in JS.
+    #[wasm_bindgen(js_name = Array)]
+    pub type JsArray;
+
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> JsArray;
+
+    // Method to push items into the JS array.
+    #[wasm_bindgen(method, js_name = push)]
+    pub fn push(this: &JsArray, item: JsValue);
+}
+
+
+#[wasm_bindgen]
+pub fn parse(input: &str) -> Result<JsValue, JsValue> {
+    let mut lexer = Lexer::new(input);
+    lexer.tokenize_input();
+    let result: Vec<Token> = lexer.tokens;
+
+    // serde_wasm_bindgen::to_value(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+    // Create a new JS array
+    let js_array: JsArray = JsArray::new();
+    for token in result {
+        // Convert each Token to a JsValue and push it to the JavaScript array
+        let js_value = token.into_js_value();
+        js_array.push(js_value);
+    }
+    Ok(JsValue::from(js_array))
+}
+
+#[wasm_bindgen]
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub enum TokenCategory {
     Keyword,
     Dunder,
@@ -16,7 +67,7 @@ pub enum TokenCategory {
 }
 
 #[wasm_bindgen]
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub struct Token {
     kind: TokenType,
     value: Option<String>,
@@ -32,12 +83,16 @@ impl Token {
             category,
         }
     }
-
+    pub fn into_js_value(self) -> JsValue {
+        // Convert the Token to a JsValue. This could be a JavaScript object.
+        // Use serde_wasm_bindgen if you need to serialize complex structures.
+        serde_wasm_bindgen::to_value(&self).unwrap()
+    }
     // Getters can be added here for the fields if you want to provide access from JS.
 }
 
 #[wasm_bindgen]
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub enum TokenType {
     Indent,
     Dedent,
@@ -245,6 +300,7 @@ pub enum TokenType {
     Newline,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Lexer {
     pub input: Vec<u8>,
     pub position: usize,
