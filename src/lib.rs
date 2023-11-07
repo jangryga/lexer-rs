@@ -1,3 +1,6 @@
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
 #[derive(PartialEq, Debug)]
 pub enum TokenCategory {
     Keyword,
@@ -6,219 +9,240 @@ pub enum TokenCategory {
     BuiltInFn,
     PunctuationAndGroup,
     Operators,
-    Comparison
+    Comparison,
+    Literal,
+    Identifier,
+    Whitespace,
 }
 
-pub enum TokenKind {
-    Abs
-}
-
+#[wasm_bindgen]
 #[derive(PartialEq, Debug)]
-pub enum Token {
-    Indent(i32),
-    Dedent(i32),
+pub struct Token {
+    kind: TokenType,
+    value: Option<String>,
+    category: TokenCategory,
+}
+
+#[wasm_bindgen]
+impl Token {
+    pub fn new(kind: TokenType, value: Option<String>, category: TokenCategory) -> Token {
+        Token {
+            kind,
+            value,
+            category,
+        }
+    }
+
+    // Getters can be added here for the fields if you want to provide access from JS.
+}
+
+#[wasm_bindgen]
+#[derive(PartialEq, Debug)]
+pub enum TokenType {
+    Indent,
+    Dedent,
 
     // Standard keywords
-    False(TokenCategory),
-    None(TokenCategory),
-    True(TokenCategory),
-    And(TokenCategory),
-    As(TokenCategory),
-    Assert(TokenCategory),
-    Async(TokenCategory),
-    Await(TokenCategory),
-    Break(TokenCategory),
-    Class(TokenCategory),
-    Continue(TokenCategory),
-    Def(TokenCategory),
-    Del(TokenCategory),
-    Elif(TokenCategory),
-    Else(TokenCategory),
-    Except(TokenCategory),
-    Finally(TokenCategory),
-    For(TokenCategory),
-    From(TokenCategory),
-    Global(TokenCategory),
-    If(TokenCategory),
-    Import(TokenCategory),
-    In(TokenCategory),
-    Is(TokenCategory),
-    Lambda(TokenCategory),
-    Local(TokenCategory),
-    Nonlocal(TokenCategory),
-    Not(TokenCategory),
-    Or(TokenCategory),
-    Pass(TokenCategory),
-    Raise(TokenCategory),
-    Return(TokenCategory),
-    Try(TokenCategory),
-    While(TokenCategory),
-    With(TokenCategory),
-    Yield(TokenCategory),
+    False,
+    None,
+    True,
+    And,
+    As,
+    Assert,
+    Async,
+    Await,
+    Break,
+    Class,
+    Continue,
+    Def,
+    Del,
+    Elif,
+    Else,
+    Except,
+    Finally,
+    For,
+    From,
+    Global,
+    If,
+    Import,
+    In,
+    Is,
+    Lambda,
+    Local,
+    Nonlocal,
+    Not,
+    Or,
+    Pass,
+    Raise,
+    Return,
+    Try,
+    While,
+    With,
+    Yield,
 
-    // Special methods (commonly used(TokenCategory), but not reserved keywords)
-    Init(TokenCategory),           // __init__
-    New(TokenCategory),            // __new__
-    Delitem(TokenCategory),        // __delitem__
-    Getitem(TokenCategory),        // __getitem__
-    Setitem(TokenCategory),        // __setitem__
-    Str(TokenCategory),            // __str__
-    Repr(TokenCategory),           // __repr__
-    Len(TokenCategory),            // __len__
+    // Special methods (commonly used, but not reserved keywords)
+    Init,    // __init__
+    New,     // __new__
+    Delitem, // __delitem__
+    Getitem, // __getitem__
+    Setitem, // __setitem__
+    Str,     // __str__
+    Repr,    // __repr__
+    Len,     // __len__
     // Special cases
-    Name(TokenCategory),           // __name__
-    Doc(TokenCategory),            // __doc__
-    Package(TokenCategory),        // __package__
-    Loader(TokenCategory),         // __loader__
-    Spec(TokenCategory),           // __spec__
-    Annotations(TokenCategory),    // __annotations__
-    Builtins(TokenCategory),       // __builtins__
+    Name,        // __name__
+    Doc,         // __doc__
+    Package,     // __package__
+    Loader,      // __loader__
+    Spec,        // __spec__
+    Annotations, // __annotations__
+    Builtins,    // __builtins__
 
     // Built-in types
-    Int(TokenCategory),
-    Float(TokenCategory),
-    Complex(TokenCategory),
-    List(TokenCategory),
-    Tuple(TokenCategory),
-    RangeType(TokenCategory),
-    String(TokenCategory),
-    Set(TokenCategory),
-    Dict(TokenCategory),
-    FrozenSet(TokenCategory),
-    ByteArray(TokenCategory),
-    Bytes(TokenCategory),
-    MemoryView(TokenCategory),
-    Bool(TokenCategory),
+    Int,
+    Float,
+    Complex,
+    List,
+    Tuple,
+    RangeType,
+    String,
+    Set,
+    Dict,
+    FrozenSet,
+    ByteArray,
+    Bytes,
+    MemoryView,
+    Bool,
 
     // Built-in functions
-    Abs(TokenCategory),
-    All(TokenCategory),
-    Any(TokenCategory),
-    Ascii(TokenCategory),
-    Bin(TokenCategory),
-    BoolFn(TokenCategory),
-    Breakpoint(TokenCategory),
-    Bytearray(TokenCategory),
-    BytesFn(TokenCategory),
-    Callable(TokenCategory),
-    Chr(TokenCategory),
-    Classmethod(TokenCategory),
-    Compile(TokenCategory),
-    ComplexFn(TokenCategory),
-    Delattr(TokenCategory),
-    DictFn(TokenCategory),
-    Dir(TokenCategory),
-    Divmod(TokenCategory),
-    Enumerate(TokenCategory),
-    Eval(TokenCategory),
-    Exec(TokenCategory),
-    Filter(TokenCategory),
-    FloatFn(TokenCategory),
-    Format(TokenCategory),
-    Frozenset(TokenCategory),
-    Getattr(TokenCategory),
-    Globals(TokenCategory),
-    Hasattr(TokenCategory),
-    Hash(TokenCategory),
-    Help(TokenCategory),
-    Hex(TokenCategory),
-    Id(TokenCategory),
-    Input(TokenCategory),
-    IntFn(TokenCategory),
-    Isinstance(TokenCategory),
-    Issubclass(TokenCategory),
-    Iter(TokenCategory),
-    LenFn(TokenCategory),
-    ListFn(TokenCategory),
-    Locals(TokenCategory),
-    Map(TokenCategory),
-    Max(TokenCategory),
-    Memoryview(TokenCategory),
-    Min(TokenCategory),
-    Next(TokenCategory),
-    Object(TokenCategory),
-    Oct(TokenCategory),
-    Open(TokenCategory),
-    Ord(TokenCategory),
-    Pow(TokenCategory),
-    Print(TokenCategory),
-    Property(TokenCategory),
-    Range(TokenCategory),
-    ReprFn(TokenCategory),
-    Reversed(TokenCategory),
-    Round(TokenCategory),
-    SetFn(TokenCategory),
-    Setattr(TokenCategory),
-    Slice(TokenCategory),
-    Sorted(TokenCategory),
-    Staticmethod(TokenCategory),
-    StrFn(TokenCategory),
-    Sum(TokenCategory),
-    Super(TokenCategory),
-    TupleFn(TokenCategory),
-    Type(TokenCategory),
-    Vars(TokenCategory),
-    Zip(TokenCategory),
-    ImportFn(TokenCategory),         // __import__()
+    Abs,
+    All,
+    Any,
+    Ascii,
+    Bin,
+    BoolFn,
+    Breakpoint,
+    Bytearray,
+    BytesFn,
+    Callable,
+    Chr,
+    Classmethod,
+    Compile,
+    ComplexFn,
+    Delattr,
+    DictFn,
+    Dir,
+    Divmod,
+    Enumerate,
+    Eval,
+    Exec,
+    Filter,
+    FloatFn,
+    Format,
+    Frozenset,
+    Getattr,
+    Globals,
+    Hasattr,
+    Hash,
+    Help,
+    Hex,
+    Id,
+    Input,
+    IntFn,
+    Isinstance,
+    Issubclass,
+    Iter,
+    LenFn,
+    ListFn,
+    Locals,
+    Map,
+    Max,
+    Memoryview,
+    Min,
+    Next,
+    Object,
+    Oct,
+    Open,
+    Ord,
+    Pow,
+    Print,
+    Property,
+    Range,
+    ReprFn,
+    Reversed,
+    Round,
+    SetFn,
+    Setattr,
+    Slice,
+    Sorted,
+    Staticmethod,
+    StrFn,
+    Sum,
+    Super,
+    TupleFn,
+    Type,
+    Vars,
+    Zip,
+    ImportFn, // __import__
 
     // Punctuation and grouping
-    LeftParenthesis(TokenCategory),  // (
-    RightParenthesis(TokenCategory), // )
-    LeftBracket(TokenCategory),      // [
-    RightBracket(TokenCategory),     // ]
-    LeftBrace(TokenCategory),        // {
-    RightBrace(TokenCategory),       // }
-    Comma(TokenCategory),            // ,
-    Dot(TokenCategory),              // .
-    Semicolon(TokenCategory),        // ;
-    Colon(TokenCategory),            // :
-    Arrow(TokenCategory),            // ->
-    Ellipsis(TokenCategory),         // ...
-    
+    LeftParenthesis,  // (
+    RightParenthesis, // )
+    LeftBracket,      // [
+    RightBracket,     // ]
+    LeftBrace,        // {
+    RightBrace,       // }
+    Comma,            // ,
+    Dot,              // .
+    Semicolon,        // ;
+    Colon,            // :
+    Arrow,            // ->
+    Ellipsis,         // ...
+
     // Operators
-    Plus(TokenCategory),             // +
-    Minus(TokenCategory),            // -
-    Multiply(TokenCategory),         // *
-    Divide(TokenCategory),           // /
-    Modulo(TokenCategory),           // %
-    Power(TokenCategory),            // **
-    FloorDivide(TokenCategory),      // //
-    Increment(TokenCategory),        // ++
-    Decrement(TokenCategory),        // --
-    PlusEqual(TokenCategory),        // +=
-    MinusEqual(TokenCategory),       // -=
-    MultiplyEqual(TokenCategory),    // *=
-    DivideEqual(TokenCategory),      // /=
-    ModuloEqual(TokenCategory),      // %=
-    PowerEqual(TokenCategory),       // **=
-    FloorDivideEqual(TokenCategory), // //=
-    AndEqual(TokenCategory),         // &=
-    OrEqual(TokenCategory),          // |=
-    XorEqual(TokenCategory),         // ^=
-    ShiftLeftEqual(TokenCategory),   // <<=
-    ShiftRightEqual(TokenCategory),  // >>=
-    Assign(TokenCategory),           // =
+    Plus,             // +
+    Minus,            // -
+    Multiply,         // *
+    Divide,           // /
+    Modulo,           // %
+    Power,            // **
+    FloorDivide,      // //
+    Increment,        // ++
+    Decrement,        // --
+    PlusEqual,        // +=
+    MinusEqual,       // -=
+    MultiplyEqual,    // *=
+    DivideEqual,      // /=
+    ModuloEqual,      // %=
+    PowerEqual,       // **=
+    FloorDivideEqual, // //=
+    AndEqual,         // &=
+    OrEqual,          // |=
+    XorEqual,         // ^=
+    ShiftLeftEqual,   // <<=
+    ShiftRightEqual,  // >>=
+    Assign,           // =
 
     // Comparison and logical operators
-    Equal(TokenCategory),            // ==
-    NotEqual(TokenCategory),         // !=
-    Greater(TokenCategory),          // >
-    Less(TokenCategory),             // <
-    GreaterEqual(TokenCategory),     // >=
-    LessEqual(TokenCategory),        // <=
-    AndCmp(TokenCategory),           // &&
-    OrCmp(TokenCategory),            // ||
-    NotCmp(TokenCategory),           // !
-    BitwiseAnd(TokenCategory),       // &
-    BitwiseOr(TokenCategory),        // |
-    BitwiseXor(TokenCategory),       // ^
-    BitwiseNot(TokenCategory),       // ~
-    ShiftLeft(TokenCategory),        // <<
-    ShiftRight(TokenCategory),       // >>
+    Equal,        // ==
+    NotEqual,     // !=
+    Greater,      // >
+    Less,         // <
+    GreaterEqual, // >=
+    LessEqual,    // <=
+    AndCmp,       // &&
+    OrCmp,        // ||
+    NotCmp,       // !
+    BitwiseAnd,   // &
+    BitwiseOr,    // |
+    BitwiseXor,   // ^
+    BitwiseNot,   // ~
+    ShiftLeft,    // <<
+    ShiftRight,   // >>
 
     Eof,
-    Ident(String),
-    Newline
+    Ident,
+    Newline,
 }
 
 pub struct Lexer {
@@ -248,147 +272,248 @@ impl Lexer {
         self.handle_next_whitespace();
 
         let token = match self.character {
-            b'(' => Token::LeftParenthesis(TokenCategory::PunctuationAndGroup),
-            b')' => Token::RightParenthesis(TokenCategory::PunctuationAndGroup),
-            b'[' => Token::LeftBracket(TokenCategory::PunctuationAndGroup),
-            b']' => Token::RightBracket(TokenCategory::PunctuationAndGroup),
-            b'{' => Token::LeftBrace(TokenCategory::PunctuationAndGroup),
-            b'}' => Token::RightBrace(TokenCategory::PunctuationAndGroup),
-            b',' => Token::Comma(TokenCategory::PunctuationAndGroup),
+            b'(' => Token::new(
+                TokenType::LeftParenthesis,
+                None,
+                TokenCategory::PunctuationAndGroup,
+            ),
+            b')' => Token::new(
+                TokenType::RightParenthesis,
+                None,
+                TokenCategory::PunctuationAndGroup,
+            ),
+            b'[' => Token::new(
+                TokenType::LeftBracket,
+                None,
+                TokenCategory::PunctuationAndGroup,
+            ),
+            b']' => Token::new(
+                TokenType::RightBracket,
+                None,
+                TokenCategory::PunctuationAndGroup,
+            ),
+            b'{' => Token::new(
+                TokenType::LeftBrace,
+                None,
+                TokenCategory::PunctuationAndGroup,
+            ),
+            b'}' => Token::new(
+                TokenType::RightBrace,
+                None,
+                TokenCategory::PunctuationAndGroup,
+            ),
+            b',' => Token::new(TokenType::Comma, None, TokenCategory::PunctuationAndGroup),
             b'.' => {
                 if self.double_peek() == Some(String::from("..")) {
                     self.read_character();
                     self.read_character();
-                    Token::Ellipsis(TokenCategory::PunctuationAndGroup)
+                    Token::new(
+                        TokenType::Ellipsis,
+                        None,
+                        TokenCategory::PunctuationAndGroup,
+                    )
                 } else {
-                    Token::Dot(TokenCategory::PunctuationAndGroup)
+                    Token::new(TokenType::Dot, None, TokenCategory::PunctuationAndGroup)
                 }
-            },
-            b';' => Token::Semicolon(TokenCategory::PunctuationAndGroup),
-            b':' => Token::Colon(TokenCategory::PunctuationAndGroup),
+            }
+            b';' => Token::new(
+                TokenType::Semicolon,
+                None,
+                TokenCategory::PunctuationAndGroup,
+            ),
+            b':' => Token::new(TokenType::Colon, None, TokenCategory::PunctuationAndGroup),
             b'-' => {
                 if let Some(val) = self.peek() {
                     self.read_character();
                     match val {
-                        b'>' => Token::Arrow(TokenCategory::PunctuationAndGroup),
-                        b'-' => Token::Decrement(TokenCategory::Operators),
-                        b'=' => Token::MinusEqual(TokenCategory::Operators),
-                        _ => unreachable!("Shouldn't reach this!")
+                        b'>' => Token::new(TokenType::Arrow, None, TokenCategory::Operators),
+                        b'-' => Token::new(TokenType::Decrement, None, TokenCategory::Operators),
+                        b'=' => Token::new(TokenType::MinusEqual, None, TokenCategory::Operators),
+                        _ => unreachable!("Lexer error on '-'"),
                     }
                 } else {
-                    Token::Minus(TokenCategory::Operators)
+                    Token::new(TokenType::Minus, None, TokenCategory::Operators)
                 }
-            },
+            }
             b'+' => {
                 if let Some(val) = self.peek() {
                     self.read_character();
                     match val {
-                        b'+' => Token::Increment(TokenCategory::Operators),
-                        b'=' => Token::PlusEqual(TokenCategory::Operators),
-                        _ => unreachable!("Shouldn't reach this on '+', got {}", val as char)
+                        b'+' => Token::new(TokenType::Increment, None, TokenCategory::Operators),
+                        b'=' => Token::new(TokenType::PlusEqual, None, TokenCategory::Operators),
+                        _ => unreachable!("Lexer error on '+'"),
                     }
                 } else {
-                    Token::Plus(TokenCategory::Operators)
+                    Token::new(TokenType::Plus, None, TokenCategory::Operators)
                 }
-            },
+            }
             b'*' => {
                 if self.peek() == Some(b'*') {
                     self.read_character();
-                    Token::Power(TokenCategory::Operators)
+                    Token::new(TokenType::Power, None, TokenCategory::Operators)
                 } else {
-                    Token::Multiply(TokenCategory::Operators)
+                    Token::new(TokenType::Multiply, None, TokenCategory::Operators)
                 }
-            },
+            }
             b'/' => {
                 if self.peek() == Some(b'/') {
                     self.read_character();
-                    Token::FloorDivide(TokenCategory::Operators)
+                    Token::new(TokenType::FloorDivide, None, TokenCategory::Operators)
                 } else {
-                    Token::Divide(TokenCategory::Operators)
+                    Token::new(TokenType::Divide, None, TokenCategory::Operators)
                 }
-            },
-            b'%' => Token::Modulo(TokenCategory::Operators),
+            }
+            b'%' => Token::new(TokenType::Modulo, None, TokenCategory::Operators),
             b'=' => {
                 if self.peek() == Some(b'=') {
                     self.read_character();
-                    Token::Equal(TokenCategory::Comparison)
+                    Token::new(TokenType::Equal, None, TokenCategory::Comparison)
                 } else {
-                    Token::Assign(TokenCategory::Operators)
+                    Token::new(TokenType::Assign, None, TokenCategory::Operators)
                 }
-            },
+            }
             b'!' => {
                 if self.peek() == Some(b'=') {
                     self.read_character();
-                    Token::NotEqual(TokenCategory::Comparison)
+                    Token::new(TokenType::NotEqual, None, TokenCategory::Comparison)
                 } else {
-                    Token::NotCmp(TokenCategory::Comparison)
+                    Token::new(TokenType::NotCmp, None, TokenCategory::Comparison)
                 }
-            },
+            }
             b'>' => {
                 if let Some(val) = self.peek() {
                     self.read_character();
                     match val {
-                        b'=' => Token::GreaterEqual(TokenCategory::Comparison),
-                        b'>' => Token::ShiftRight(TokenCategory::Comparison),
-                        _ => unreachable!("Shouldn't reach this on >")
-                    } 
+                        b'=' => {
+                            Token::new(TokenType::GreaterEqual, None, TokenCategory::Comparison)
+                        }
+                        b'>' => Token::new(TokenType::ShiftRight, None, TokenCategory::Operators),
+                        _ => unreachable!("Lexer error on '>'"),
+                    }
                 } else {
-                    Token::Greater(TokenCategory::Comparison)
+                    Token::new(TokenType::Greater, None, TokenCategory::Comparison)
                 }
             }
-            b'\n' => {
-                match self.indent_diff() {
-                    val if val > 0 => Token::Indent(val),
-                    val if val < 0 => Token::Dedent(val),
-                    0 => Token::Newline,
-                    _ => unreachable!("Broke numbers")
+            b'<' => {
+                if let Some(val) = self.peek() {
+                    self.read_character();
+                    match val {
+                        b'=' => Token::new(TokenType::LessEqual, None, TokenCategory::Comparison),
+                        b'<' => Token::new(TokenType::ShiftLeft, None, TokenCategory::Operators),
+                        _ => unreachable!("Lexer error on '<'"),
+                    }
+                } else {
+                    Token::new(TokenType::Less, None, TokenCategory::Comparison)
                 }
+            }
+            // b'&' => {
+            //     if self.peek() == Some(b'&') {
+            //         self.read_character();
+            //         Token::new(TokenType::LogicalAnd, None, TokenCategory::Operators)
+            //     } else {
+            //         Token::new(TokenType::BitwiseAnd, None, TokenCategory::Operators)
+            //     }
+            // },
+            // b'|' => {
+            //     if self.peek() == Some(b'|') {
+            //         self.read_character();
+            //         Token::new(TokenType::LogicalOr, None, TokenCategory::Operators)
+            //     } else {
+            //         Token::new(TokenType::BitwiseOr, None, TokenCategory::Operators)
+            //     }
+            // },
+            b'^' => Token::new(TokenType::BitwiseXor, None, TokenCategory::Operators),
+            b'~' => Token::new(TokenType::BitwiseNot, None, TokenCategory::Operators),
+            b'\n' => match self.indent_diff() {
+                val if val > 0 => Token::new(
+                    TokenType::Indent,
+                    Some(val.to_string()),
+                    TokenCategory::Whitespace,
+                ),
+                val if val < 0 => Token::new(
+                    TokenType::Dedent,
+                    Some(val.abs().to_string()),
+                    TokenCategory::Whitespace,
+                ),
+                0 => Token::new(TokenType::Newline, None, TokenCategory::Whitespace),
+                _ => unreachable!("Indentation error"),
             },
+            // b'\n' => {
+            //     match self.indent_diff() {
+            //         val if val > 0 => Token::new(TokenType::Indent, None, TokenCategory::Literal),
+            //         val if val < 0 => Token::new(TokenType::Dedent, None, TokenCategory::Literal),
+            //         0 => Token::new(TokenType::Newline, None, TokenCategory::Literal),
+            //         _ => unreachable!("Broke numbers")
+            //     }
+            // },
             b'0'..=b'9' => {
-                let num = self.read_num();
-                return Ok(Token::Ident(num))
-            },
+                // Start of a number literal
+                let mut number_str = self.read_num(); // You need to define read_number method
+                if let Some(next_char) = self.peek() {
+                    // Check for a floating-point literal
+                    if next_char == b'.' {
+                        self.read_character(); // Consume the '.'
+                        number_str.push('.'); // Add '.' to the number string
+                        number_str.push_str(&self.read_num()); // Append the rest of the floating-point number
+                    }
+                }
+                return Ok(Token::new(
+                    TokenType::Ident,
+                    Some(number_str),
+                    TokenCategory::Literal,
+                ));
+            }
             b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
                 let ident = self.read_ident();
-                return Ok(match ident.as_str() {
-                    "def" => Token::Def(TokenCategory::Keyword),
-                    "from" => Token::From(TokenCategory::Keyword),
-                    "import" => Token::Import(TokenCategory::Keyword),
-                    "if" => Token::If(TokenCategory::Keyword),
-                    "else" => Token::Else(TokenCategory::Keyword),
-                    "elif" => Token::Elif(TokenCategory::Keyword),
-                    "for" => Token::For(TokenCategory::Keyword),
-                    "while" => Token::While(TokenCategory::Keyword),
-                    "False" => Token::False(TokenCategory::Keyword),
-                    "True" => Token::True(TokenCategory::Keyword),
-                    "continue" => Token::Continue(TokenCategory::Keyword),
-                    "break" => Token::Break(TokenCategory::Keyword),
-                    "del" => Token::Del(TokenCategory::Keyword),
-                    "global" => Token::Global(TokenCategory::Keyword),
-                    "local" => Token::Local(TokenCategory::Keyword),
-                    "nonlocal" => Token::Nonlocal(TokenCategory::Keyword),
-                    "try" => Token::Try(TokenCategory::Keyword),
-                    "except" => Token::Except(TokenCategory::Keyword),
-                    "as" => Token::As(TokenCategory::Keyword),
-                    "finally" => Token::Finally(TokenCategory::Keyword),
-                    "is" => Token::Is(TokenCategory::Keyword),
-                    "in" => Token::In(TokenCategory::Keyword),
-                    "not" => Token::Not(TokenCategory::Keyword),
-                    "lambda" => Token::Lambda(TokenCategory::Keyword),
-                    "return" => Token::Return(TokenCategory::Keyword),
-                    "with" => Token::With(TokenCategory::Keyword),
-                    "yield" => Token::Yield(TokenCategory::Keyword),
-                    "pass" => Token::Pass(TokenCategory::Keyword),
-                    "print" => Token::Print(TokenCategory::BuiltInFn),
-                    _ => {
-                        Token::Ident(ident)
-                    },
-                })
-            },
-            0 => Token::Eof,
-            char => unreachable!("shouldn't reach this, tried to match {} \n tokens: {:?}", char as char, self.tokens),
+
+                let (token_type, token_category) = match ident.as_str() {
+                    "def" => (TokenType::Def, TokenCategory::Keyword),
+                    "from" => (TokenType::From, TokenCategory::Keyword),
+                    "import" => (TokenType::Import, TokenCategory::Keyword),
+                    "if" => (TokenType::If, TokenCategory::Keyword),
+                    "else" => (TokenType::Else, TokenCategory::Keyword),
+                    "elif" => (TokenType::Elif, TokenCategory::Keyword),
+                    "for" => (TokenType::For, TokenCategory::Keyword),
+                    "while" => (TokenType::While, TokenCategory::Keyword),
+                    "False" => (TokenType::False, TokenCategory::Keyword),
+                    "True" => (TokenType::True, TokenCategory::Keyword),
+                    "continue" => (TokenType::Continue, TokenCategory::Keyword),
+                    "break" => (TokenType::Break, TokenCategory::Keyword),
+                    "del" => (TokenType::Del, TokenCategory::Keyword),
+                    "global" => (TokenType::Global, TokenCategory::Keyword),
+                    "local" => (TokenType::Local, TokenCategory::Keyword),
+                    "nonlocal" => (TokenType::Nonlocal, TokenCategory::Keyword),
+                    "try" => (TokenType::Try, TokenCategory::Keyword),
+                    "except" => (TokenType::Except, TokenCategory::Keyword),
+                    "as" => (TokenType::As, TokenCategory::Keyword),
+                    "finally" => (TokenType::Finally, TokenCategory::Keyword),
+                    "is" => (TokenType::Is, TokenCategory::Keyword),
+                    "in" => (TokenType::In, TokenCategory::Keyword),
+                    "not" => (TokenType::Not, TokenCategory::Keyword),
+                    "lambda" => (TokenType::Lambda, TokenCategory::Keyword),
+                    "return" => (TokenType::Return, TokenCategory::Keyword),
+                    "with" => (TokenType::With, TokenCategory::Keyword),
+                    "yield" => (TokenType::Yield, TokenCategory::Keyword),
+                    "pass" => (TokenType::Pass, TokenCategory::Keyword),
+                    // Add cases for built-in functions, types, etc.
+                    "print" => (TokenType::Print, TokenCategory::BuiltInFn),
+                    // ...
+                    // Default case for identifiers
+                    _ => (TokenType::Ident, TokenCategory::Identifier),
+                };
+                if token_type == TokenType::Ident {
+                    return Ok(Token::new(
+                        token_type,
+                        Some(String::from(ident)),
+                        token_category,
+                    ));
+                }
+                return Ok(Token::new(token_type, None, token_category));
+            }
+            0 => Token::new(TokenType::Eof, None, TokenCategory::Literal),
+            char => unreachable!("shouldn't reach this, tried to match {}", char as char),
         };
-        
+
         self.read_character();
         Ok(token)
     }
@@ -440,17 +565,20 @@ impl Lexer {
 
     pub fn peek(&mut self) -> Option<u8> {
         if self.read_position >= self.input.len() || self.input[self.read_position] == b' ' {
-            return None
-        } 
+            return None;
+        }
         Some(self.input[self.read_position])
     }
 
     pub fn double_peek(&mut self) -> Option<String> {
         if self.read_position + 1 >= self.input.len() {
-            return None
+            return None;
         }
 
-        Some(String::from_utf8_lossy(&self.input[self.read_position..=self.position+1]).to_string())
+        Some(
+            String::from_utf8_lossy(&self.input[self.read_position..=self.position + 1])
+                .to_string(),
+        )
     }
 
     pub fn tokenize_input(&mut self) {
@@ -464,15 +592,35 @@ impl Lexer {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Lexer, Token, TokenCategory};
+    use crate::{Lexer, Token, TokenCategory, TokenType};
 
     #[test]
     fn single_tokens() {
         let exps = vec![
-            ("variable_name", vec![Token::Ident(String::from("variable_name"))]),
-            ("def", vec![Token::Def(TokenCategory::Keyword)]),
-            ("**", vec![Token::Power(TokenCategory::Operators)]),
-            ("my_func", vec![Token::Ident(String::from("my_func"))])
+            (
+                "variable_name",
+                vec![Token::new(
+                    TokenType::Ident,
+                    Some(String::from("variable_name")),
+                    TokenCategory::Identifier,
+                )],
+            ),
+            (
+                "def",
+                vec![Token::new(TokenType::Def, None, TokenCategory::Keyword)],
+            ),
+            (
+                "**",
+                vec![Token::new(TokenType::Power, None, TokenCategory::Operators)],
+            ),
+            (
+                "my_func",
+                vec![Token::new(
+                    TokenType::Ident,
+                    Some(String::from("my_func")),
+                    TokenCategory::Identifier,
+                )],
+            ),
         ];
         run_tests(exps)
     }
@@ -480,14 +628,34 @@ mod tests {
     #[test]
     fn one_line_expressions() {
         let tokens = vec![
-            Token::Def(TokenCategory::Keyword),
-            Token::Ident(String::from("my_func")),
-            Token::LeftParenthesis(TokenCategory::PunctuationAndGroup),
-            Token::Ident(String::from("a")),
-            Token::Comma(TokenCategory::PunctuationAndGroup),
-            Token::Ident(String::from("b")),
-            Token::RightParenthesis(TokenCategory::PunctuationAndGroup),
-            Token::Colon(TokenCategory::PunctuationAndGroup),
+            Token::new(TokenType::Def, None, TokenCategory::Keyword),
+            Token::new(
+                TokenType::Ident,
+                Some(String::from("my_func")),
+                TokenCategory::Identifier,
+            ),
+            Token::new(
+                TokenType::LeftParenthesis,
+                None,
+                TokenCategory::PunctuationAndGroup,
+            ),
+            Token::new(
+                TokenType::Ident,
+                Some(String::from("a")),
+                TokenCategory::Identifier,
+            ),
+            Token::new(TokenType::Comma, None, TokenCategory::PunctuationAndGroup),
+            Token::new(
+                TokenType::Ident,
+                Some(String::from("b")),
+                TokenCategory::Identifier,
+            ),
+            Token::new(
+                TokenType::RightParenthesis,
+                None,
+                TokenCategory::PunctuationAndGroup,
+            ),
+            Token::new(TokenType::Colon, None, TokenCategory::PunctuationAndGroup),
         ];
         run_tests_explicit("def my_func(a, b):", tokens);
     }
@@ -500,41 +668,112 @@ mod tests {
     res = my_func(1, 32)
     print(res)
     "#;
-    
-    let tokens = vec![
-        Token::Def(TokenCategory::Keyword),
-        Token::Ident(String::from("my_func")),
-        Token::LeftParenthesis(TokenCategory::PunctuationAndGroup),
-        Token::Ident(String::from("a")),
-        Token::Comma(TokenCategory::PunctuationAndGroup),
-        Token::Ident(String::from("b")),
-        Token::RightParenthesis(TokenCategory::PunctuationAndGroup),
-        Token::Colon(TokenCategory::PunctuationAndGroup),
-        Token::Indent(4),
-        Token::Return(TokenCategory::Keyword),
-        Token::Ident(String::from("a")),
-        Token::Plus(TokenCategory::Operators),
-        Token::Ident(String::from("b")),
-        Token::Dedent(-4),
-        Token::Newline,
-        Token::Ident(String::from("res")),
-        Token::Assign(TokenCategory::Operators),
-        Token::Ident(String::from("my_func")),
-        Token::LeftParenthesis(TokenCategory::PunctuationAndGroup),
-        Token::Ident(String::from("1")),
-        Token::Comma(TokenCategory::PunctuationAndGroup),
-        Token::Ident(String::from("32")),
-        Token::RightParenthesis(TokenCategory::PunctuationAndGroup),
-        Token::Newline,
-        Token::Print(TokenCategory::BuiltInFn),
-        Token::LeftParenthesis(TokenCategory::PunctuationAndGroup),
-        Token::Ident(String::from("res")),
-        Token::RightParenthesis(TokenCategory::PunctuationAndGroup),
-        Token::Newline
-    ];
 
-    run_tests_explicit(input, tokens);
+        let tokens = vec![
+            Token::new(TokenType::Def, None, TokenCategory::Keyword),
+            Token::new(
+                TokenType::Ident,
+                Some(String::from("my_func")),
+                TokenCategory::Identifier,
+            ),
+            Token::new(
+                TokenType::LeftParenthesis,
+                None,
+                TokenCategory::PunctuationAndGroup,
+            ),
+            Token::new(
+                TokenType::Ident,
+                Some(String::from("a")),
+                TokenCategory::Identifier,
+            ),
+            Token::new(TokenType::Comma, None, TokenCategory::PunctuationAndGroup),
+            Token::new(
+                TokenType::Ident,
+                Some(String::from("b")),
+                TokenCategory::Identifier,
+            ),
+            Token::new(
+                TokenType::RightParenthesis,
+                None,
+                TokenCategory::PunctuationAndGroup,
+            ),
+            Token::new(TokenType::Colon, None, TokenCategory::PunctuationAndGroup),
+            Token::new(
+                TokenType::Indent,
+                Some(String::from("4")),
+                TokenCategory::Whitespace,
+            ), // Assuming you have a Whitespace category
+            Token::new(TokenType::Return, None, TokenCategory::Keyword),
+            Token::new(
+                TokenType::Ident,
+                Some(String::from("a")),
+                TokenCategory::Identifier,
+            ),
+            Token::new(TokenType::Plus, None, TokenCategory::Operators),
+            Token::new(
+                TokenType::Ident,
+                Some(String::from("b")),
+                TokenCategory::Identifier,
+            ),
+            Token::new(
+                TokenType::Dedent,
+                Some(String::from("4")),
+                TokenCategory::Whitespace,
+            ), // Assuming you have a Whitespace category
+            Token::new(TokenType::Newline, None, TokenCategory::Whitespace),
+            Token::new(
+                TokenType::Ident,
+                Some(String::from("res")),
+                TokenCategory::Identifier,
+            ),
+            Token::new(TokenType::Assign, None, TokenCategory::Operators),
+            Token::new(
+                TokenType::Ident,
+                Some(String::from("my_func")),
+                TokenCategory::Identifier,
+            ),
+            Token::new(
+                TokenType::LeftParenthesis,
+                None,
+                TokenCategory::PunctuationAndGroup,
+            ),
+            Token::new(
+                TokenType::Ident,
+                Some(String::from("1")),
+                TokenCategory::Literal,
+            ),
+            Token::new(TokenType::Comma, None, TokenCategory::PunctuationAndGroup),
+            Token::new(
+                TokenType::Ident,
+                Some(String::from("32")),
+                TokenCategory::Literal,
+            ),
+            Token::new(
+                TokenType::RightParenthesis,
+                None,
+                TokenCategory::PunctuationAndGroup,
+            ),
+            Token::new(TokenType::Newline, None, TokenCategory::Whitespace),
+            Token::new(TokenType::Print, None, TokenCategory::BuiltInFn),
+            Token::new(
+                TokenType::LeftParenthesis,
+                None,
+                TokenCategory::PunctuationAndGroup,
+            ),
+            Token::new(
+                TokenType::Ident,
+                Some(String::from("res")),
+                TokenCategory::Identifier,
+            ),
+            Token::new(
+                TokenType::RightParenthesis,
+                None,
+                TokenCategory::PunctuationAndGroup,
+            ),
+            Token::new(TokenType::Newline, None, TokenCategory::Whitespace),
+        ];
 
+        run_tests_explicit(input, tokens);
     }
 
     fn run_tests_explicit(input: &str, tokens: Vec<Token>) {
@@ -549,11 +788,14 @@ mod tests {
     }
 
     fn run_tests(exps: Vec<(&str, Vec<Token>)>) {
-        for e in exps {
-            let mut lex = Lexer::new(e.0.into());
-            lex.tokenize_input();
-            println!("Need: {:?}, found {:?}", e.1, lex.tokens);
-            assert!(lex.tokens == e.1)
+        for (input, expected) in exps {
+            let mut lexer = Lexer::new(input);
+            for (i, exp_token) in expected.iter().enumerate() {
+                match lexer.tokenize_next_character() {
+                    Ok(token) => assert_eq!(&token, exp_token, "Test failed at token index: {}", i),
+                    Err(_) => panic!("Tokenization failed at index: {}", i),
+                }
+            }
         }
     }
 }
