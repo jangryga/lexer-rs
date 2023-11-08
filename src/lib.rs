@@ -40,15 +40,15 @@ pub fn parse(input: &str) -> Result<JsValue, JsValue> {
     lexer.tokenize_input();
     let result: Vec<Token> = lexer.tokens;
 
-    // serde_wasm_bindgen::to_value(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+    serde_wasm_bindgen::to_value(&result).map_err(|e| JsValue::from_str(&e.to_string()))
     // Create a new JS array
-    let js_array: JsArray = JsArray::new();
-    for token in result {
-        // Convert each Token to a JsValue and push it to the JavaScript array
-        let js_value = token.into_js_value();
-        js_array.push(js_value);
-    }
-    Ok(JsValue::from(js_array))
+    // let js_array: JsArray = JsArray::new();
+    // for token in result {
+    //     // Convert each Token to a JsValue and push it to the JavaScript array
+    //     let js_value = token.into_js_value();
+    //     js_array.push(js_value);
+    // }
+    // Ok(JsValue::from(js_array))
 }
 
 #[wasm_bindgen]
