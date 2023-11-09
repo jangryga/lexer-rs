@@ -1,11 +1,16 @@
 use wasm_bindgen::prelude::*;
 use serde::{Serialize, Deserialize};
+use console_error_panic_hook::set_once;
 
-#[wasm_bindgen]
-extern {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
+// Usage: console_log!("Hello {}!", "world");
+macro_rules! console_log {
+    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
 }
+
+pub fn log(s: &str) {
+    web_sys::console::log_1(&s.into());
+}
+
 
 #[wasm_bindgen(typescript_custom_section)]
 const TS_TOKEN_INTERFACE: &'static str = r#"
@@ -33,22 +38,25 @@ extern "C" {
     pub fn push(this: &JsArray, item: JsValue);
 }
 
+#[wasm_bindgen(start)]
+pub fn main_js() -> Result<(), JsValue> {
+    set_once();
+    Ok(())
+}
+
 
 #[wasm_bindgen]
 pub fn parse(input: &str) -> Result<JsValue, JsValue> {
+    // Debugging output
+    input.chars().enumerate().for_each(|(i, c)| {
+        console_log!("Char {} at position {}: {:?}", c as u32, i, c);
+    });
+    
     let mut lexer = Lexer::new(input);
     lexer.tokenize_input();
     let result: Vec<Token> = lexer.tokens;
 
     serde_wasm_bindgen::to_value(&result).map_err(|e| JsValue::from_str(&e.to_string()))
-    // Create a new JS array
-    // let js_array: JsArray = JsArray::new();
-    // for token in result {
-    //     // Convert each Token to a JsValue and push it to the JavaScript array
-    //     let js_value = token.into_js_value();
-    //     js_array.push(js_value);
-    // }
-    // Ok(JsValue::from(js_array))
 }
 
 #[wasm_bindgen]
@@ -649,6 +657,15 @@ impl Lexer {
 #[cfg(test)]
 mod tests {
     use crate::{Lexer, Token, TokenCategory, TokenType};
+
+
+    #[test]
+    fn handles_whitespace() {
+        let input = "def    ";
+        let tokens = vec![Token::new(TokenType::Def, None, TokenCategory::Keyword)];
+
+        run_tests_explicit(input, tokens)
+    }
 
     #[test]
     fn single_tokens() {
