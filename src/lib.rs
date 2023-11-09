@@ -1,6 +1,6 @@
-use wasm_bindgen::prelude::*;
-use serde::{Serialize, Deserialize};
 use console_error_panic_hook::set_once;
+use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::*;
 
 // Usage: console_log!("Hello {}!", "world");
 macro_rules! console_log {
@@ -10,7 +10,6 @@ macro_rules! console_log {
 pub fn log(s: &str) {
     web_sys::console::log_1(&s.into());
 }
-
 
 #[wasm_bindgen(typescript_custom_section)]
 const TS_TOKEN_INTERFACE: &'static str = r#"
@@ -44,14 +43,13 @@ pub fn main_js() -> Result<(), JsValue> {
     Ok(())
 }
 
-
 #[wasm_bindgen]
 pub fn parse(input: &str) -> Result<JsValue, JsValue> {
     // Debugging output
     input.chars().enumerate().for_each(|(i, c)| {
         console_log!("Char {} at position {}: {:?}", c as u32, i, c);
     });
-    
+
     let mut lexer = Lexer::new(input);
     lexer.tokenize_input();
     let result: Vec<Token> = lexer.tokens;
@@ -308,6 +306,8 @@ pub enum TokenType {
     Newline,
 }
 
+static WHITESPACE: [u8; 2] = [b' ', 0xA0];
+
 #[derive(Serialize, Deserialize)]
 pub struct Lexer {
     pub input: Vec<u8>,
@@ -470,22 +470,6 @@ impl Lexer {
                     Token::new(TokenType::Less, None, TokenCategory::Comparison)
                 }
             }
-            // b'&' => {
-            //     if self.peek() == Some(b'&') {
-            //         self.read_character();
-            //         Token::new(TokenType::LogicalAnd, None, TokenCategory::Operators)
-            //     } else {
-            //         Token::new(TokenType::BitwiseAnd, None, TokenCategory::Operators)
-            //     }
-            // },
-            // b'|' => {
-            //     if self.peek() == Some(b'|') {
-            //         self.read_character();
-            //         Token::new(TokenType::LogicalOr, None, TokenCategory::Operators)
-            //     } else {
-            //         Token::new(TokenType::BitwiseOr, None, TokenCategory::Operators)
-            //     }
-            // },
             b'^' => Token::new(TokenType::BitwiseXor, None, TokenCategory::Operators),
             b'~' => Token::new(TokenType::BitwiseNot, None, TokenCategory::Operators),
             b'\n' => match self.indent_diff() {
@@ -502,14 +486,6 @@ impl Lexer {
                 0 => Token::new(TokenType::Newline, None, TokenCategory::Whitespace),
                 _ => unreachable!("Indentation error"),
             },
-            // b'\n' => {
-            //     match self.indent_diff() {
-            //         val if val > 0 => Token::new(TokenType::Indent, None, TokenCategory::Literal),
-            //         val if val < 0 => Token::new(TokenType::Dedent, None, TokenCategory::Literal),
-            //         0 => Token::new(TokenType::Newline, None, TokenCategory::Literal),
-            //         _ => unreachable!("Broke numbers")
-            //     }
-            // },
             b'0'..=b'9' => {
                 // Start of a number literal
                 let mut number_str = self.read_num(); // You need to define read_number method
@@ -583,7 +559,7 @@ impl Lexer {
     }
 
     pub fn handle_next_whitespace(&mut self) {
-        while self.read_position < self.input.len() && self.character == b' ' {
+        while self.read_position < self.input.len() && WHITESPACE.contains(&self.character) {
             self.read_character();
         }
     }
@@ -591,8 +567,9 @@ impl Lexer {
     pub fn indent_diff(&mut self) -> i32 {
         let mut indent_length = 0;
         let initial = self.current_indent;
-
-        while self.read_position < self.input.len() && self.input[self.read_position] == b' ' {
+        while self.read_position < self.input.len()
+            && WHITESPACE.contains(&self.input[self.read_position])
+        {
             self.read_character();
             indent_length += 1;
         }
@@ -628,7 +605,9 @@ impl Lexer {
     }
 
     pub fn peek(&mut self) -> Option<u8> {
-        if self.read_position >= self.input.len() || self.input[self.read_position] == b' ' {
+        if self.read_position >= self.input.len()
+            || WHITESPACE.contains(&self.input[self.read_position])
+        {
             return None;
         }
         Some(self.input[self.read_position])
@@ -657,7 +636,6 @@ impl Lexer {
 #[cfg(test)]
 mod tests {
     use crate::{Lexer, Token, TokenCategory, TokenType};
-
 
     #[test]
     fn handles_whitespace() {
