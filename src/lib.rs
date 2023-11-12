@@ -1,3 +1,5 @@
+#[allow(unused_macros)]
+
 pub mod lexer;
 
 #[cfg(test)]
@@ -211,7 +213,7 @@ mod tests {
     }
 
     fn run_tests_explicit(input: &str, tokens: Vec<Token>) {
-        let mut lexer = Lexer::new(input);
+        let mut lexer = Lexer::new(Some(input));
         lexer.current_indent = 4;
 
         for token in tokens {
@@ -223,7 +225,7 @@ mod tests {
 
     fn run_tests(exps: Vec<(&str, Vec<Token>)>) {
         for (input, expected) in exps {
-            let mut lexer = Lexer::new(input);
+            let mut lexer = Lexer::new(Some(input));
             for (i, exp_token) in expected.iter().enumerate() {
                 match lexer.tokenize_next_character() {
                     Ok(token) => assert_eq!(&token, exp_token, "Test failed at token index: {}", i),

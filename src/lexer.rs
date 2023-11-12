@@ -27,37 +27,13 @@ export interface TokenType {
 }
 "#;
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(typescript_type = "Token[]")]
-    pub type Tokens;
-
-    // Use JsValue for representing an array in JS.
-    #[wasm_bindgen(js_name = Array)]
-    pub type JsArray;
-
-    #[wasm_bindgen(constructor)]
-    pub fn new() -> JsArray;
-
-    // Method to push items into the JS array.
-    #[wasm_bindgen(method, js_name = push)]
-    pub fn push(this: &JsArray, item: JsValue);
-}
-
+// TODO: move to utils or init code 
 #[wasm_bindgen(start)]
 pub fn main_js() -> Result<(), JsValue> {
     set_once();
     Ok(())
 }
 
-#[wasm_bindgen]
-pub fn parse(input: &str) -> Result<JsValue, JsValue> {
-    let mut lexer = Lexer::new(input);
-    lexer.tokenize_input();
-    let result: Vec<Token> = lexer.tokens;
-
-    serde_wasm_bindgen::to_value(&result).map_err(|e| JsValue::from_str(&e.to_string()))
-}
 
 #[wasm_bindgen]
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
@@ -97,7 +73,6 @@ impl Token {
         // Use serde_wasm_bindgen if you need to serialize complex structures.
         serde_wasm_bindgen::to_value(&self).unwrap()
     }
-    // Getters can be added here for the fields if you want to provide access from JS.
 }
 
 #[wasm_bindgen]
@@ -309,6 +284,28 @@ pub enum TokenKind {
     Newline,
 }
 
+#[wasm_bindgen]
+pub struct LexerWrapper {
+    lexer: Lexer,
+}
+
+#[wasm_bindgen]
+impl LexerWrapper {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> LexerWrapper {
+        LexerWrapper { lexer: Lexer::new(None) }
+    }
+
+    pub fn tokenize(&mut self, input: &str) -> Result<JsValue, JsValue> {
+        self.lexer.input = input.chars().map(|ch| ch as u32).collect();
+        self.lexer.tokenize_input();
+        let tokens = &self.lexer.tokens;
+
+        serde_wasm_bindgen::to_value(tokens).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+}
+
+
 #[derive(Serialize, Deserialize)]
 pub struct Lexer {
     pub input: Vec<u32>,
@@ -320,17 +317,31 @@ pub struct Lexer {
 }
 
 impl Lexer {
-    pub fn new(input: &str) -> Lexer {
-        let mut lex = Lexer {
-            character: 0,
-            position: 0,
-            read_position: 0,
-            current_indent: 0,
-            input: input.chars().map(|ch| ch as u32).collect(),
-            tokens: Vec::<Token>::new(),
-        };
-        lex.read_character();
-        lex
+    pub fn new(input: Option<&str>) -> Lexer {
+        match input {
+            Some(text) => {
+                let mut lex = Lexer {
+                    character: 0,
+                    position: 0,
+                    read_position: 0,
+                    current_indent: 0,
+                    input: text.chars().map(|ch| ch as u32).collect(),
+                    tokens: Vec::<Token>::new(),
+                };
+                lex.read_character();
+                lex
+            },
+            None => {
+                Lexer {
+                    character: 0,
+                    position: 0,
+                    read_position: 0,
+                    current_indent: 0,
+                    input: Vec::new(),
+                    tokens: Vec::<Token>::new(),
+                }
+            }
+        }
     }
 
     pub fn tokenize_next_character(&mut self) -> Result<Token, ()> {
@@ -636,6 +647,7 @@ impl Lexer {
     }
 
     pub fn tokenize_input(&mut self) {
+        self.tokens = Vec::new();
         while self.read_position <= self.input.len() {
             if let Ok(token) = self.tokenize_next_character() {
                 self.tokens.push(token);
