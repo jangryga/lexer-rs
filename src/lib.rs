@@ -2,13 +2,24 @@ use console_error_panic_hook::set_once;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
+
+static WHITESPACE: [u32; 2] = [32, 160];
+
 // Usage: console_log!("Hello {}!", "world");
 macro_rules! console_log {
     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
 }
 
+#[cfg(target_arch = "wasm32")]
 pub fn log(s: &str) {
     web_sys::console::log_1(&s.into());
+}
+
+
+#[cfg(not(target_arch = "wasm32"))]
+fn log(message: &str) {
+    // non-wasm logging, e.g., to console
+    println!("{}", message);
 }
 
 #[wasm_bindgen(typescript_custom_section)]
@@ -45,6 +56,8 @@ pub fn main_js() -> Result<(), JsValue> {
 
 #[wasm_bindgen]
 pub fn parse(input: &str) -> Result<JsValue, JsValue> {
+
+    console_log!("Whole input 1 {input}");
     // Debugging output
     input.chars().enumerate().for_each(|(i, c)| {
         console_log!("Char {} at position {}: {:?}", c as u32, i, c);
@@ -306,26 +319,28 @@ pub enum TokenType {
     Newline,
 }
 
-static WHITESPACE: [u8; 2] = [b' ', 0xA0];
-
 #[derive(Serialize, Deserialize)]
 pub struct Lexer {
-    pub input: Vec<u8>,
+    pub input: Vec<u32>,
     pub position: usize,
     pub read_position: usize,
     pub current_indent: i32,
     pub tokens: Vec<Token>,
-    pub character: u8,
+    pub character: u32,
 }
 
 impl Lexer {
     pub fn new(input: &str) -> Lexer {
+        // console_log!("Init input: {input}");
+        // let x: Vec<u32> = 
+        // console_log!("Init input: {:?}", x);
+
         let mut lex = Lexer {
             character: 0,
             position: 0,
             read_position: 0,
             current_indent: 0,
-            input: input.into(),
+            input: input.chars().map(|ch| ch as u32).collect(),
             tokens: Vec::<Token>::new(),
         };
         lex.read_character();
@@ -333,41 +348,45 @@ impl Lexer {
     }
 
     pub fn tokenize_next_character(&mut self) -> Result<Token, ()> {
+        console_log!("Whole input 1 {:?}", self.input);
+        console_log!("BEFORE character {}, position {}, read_position {}, str length {}", self.character, self.position, self.read_position, self.input.len());
         self.handle_next_whitespace();
 
+        console_log!("AFTER character {}, position {}, read_position {}, str length {}", self.character, self.position, self.read_position, self.input.len());
+
         let token = match self.character {
-            b'(' => Token::new(
+            40 /* '(' */ => Token::new(
                 TokenType::LeftParenthesis,
                 None,
                 TokenCategory::PunctuationAndGroup,
             ),
-            b')' => Token::new(
+            41 /* ')' */ => Token::new(
                 TokenType::RightParenthesis,
                 None,
                 TokenCategory::PunctuationAndGroup,
             ),
-            b'[' => Token::new(
+            91 /* '[' */ => Token::new(
                 TokenType::LeftBracket,
                 None,
                 TokenCategory::PunctuationAndGroup,
             ),
-            b']' => Token::new(
+            93 /* ']' */ => Token::new(
                 TokenType::RightBracket,
                 None,
                 TokenCategory::PunctuationAndGroup,
             ),
-            b'{' => Token::new(
+            123 /* '{' */ => Token::new(
                 TokenType::LeftBrace,
                 None,
                 TokenCategory::PunctuationAndGroup,
             ),
-            b'}' => Token::new(
+            125 /* '}' */ => Token::new(
                 TokenType::RightBrace,
                 None,
                 TokenCategory::PunctuationAndGroup,
             ),
-            b',' => Token::new(TokenType::Comma, None, TokenCategory::PunctuationAndGroup),
-            b'.' => {
+            44 /* ',' */ => Token::new(TokenType::Comma, None, TokenCategory::PunctuationAndGroup),
+            46 /* '.' */ => {
                 if self.double_peek() == Some(String::from("..")) {
                     self.read_character();
                     self.read_character();
@@ -379,100 +398,98 @@ impl Lexer {
                 } else {
                     Token::new(TokenType::Dot, None, TokenCategory::PunctuationAndGroup)
                 }
-            }
-            b';' => Token::new(
+            },
+            59 /* ';' */ => Token::new(
                 TokenType::Semicolon,
                 None,
                 TokenCategory::PunctuationAndGroup,
             ),
-            b':' => Token::new(TokenType::Colon, None, TokenCategory::PunctuationAndGroup),
-            b'-' => {
+            58 /* ':' */ => Token::new(TokenType::Colon, None, TokenCategory::PunctuationAndGroup),
+            45 /* '-' */ => {
                 if let Some(val) = self.peek() {
                     self.read_character();
                     match val {
-                        b'>' => Token::new(TokenType::Arrow, None, TokenCategory::Operators),
-                        b'-' => Token::new(TokenType::Decrement, None, TokenCategory::Operators),
-                        b'=' => Token::new(TokenType::MinusEqual, None, TokenCategory::Operators),
+                        62 /* '>' */ => Token::new(TokenType::Arrow, None, TokenCategory::Operators),
+                        45 /* '-' */ => Token::new(TokenType::Decrement, None, TokenCategory::Operators),
+                        61 /* '=' */ => Token::new(TokenType::MinusEqual, None, TokenCategory::Operators),
                         _ => unreachable!("Lexer error on '-'"),
                     }
                 } else {
                     Token::new(TokenType::Minus, None, TokenCategory::Operators)
                 }
-            }
-            b'+' => {
+            },
+            43 /* '+' */ => {
                 if let Some(val) = self.peek() {
                     self.read_character();
                     match val {
-                        b'+' => Token::new(TokenType::Increment, None, TokenCategory::Operators),
-                        b'=' => Token::new(TokenType::PlusEqual, None, TokenCategory::Operators),
+                        43 /* '+' */ => Token::new(TokenType::Increment, None, TokenCategory::Operators),
+                        61 /* '=' */ => Token::new(TokenType::PlusEqual, None, TokenCategory::Operators),
                         _ => unreachable!("Lexer error on '+'"),
                     }
                 } else {
                     Token::new(TokenType::Plus, None, TokenCategory::Operators)
                 }
-            }
-            b'*' => {
-                if self.peek() == Some(b'*') {
+            },
+            42 /* '*' */ => {
+                if self.peek() == Some(42 /* '*' */) {
                     self.read_character();
                     Token::new(TokenType::Power, None, TokenCategory::Operators)
                 } else {
                     Token::new(TokenType::Multiply, None, TokenCategory::Operators)
                 }
-            }
-            b'/' => {
-                if self.peek() == Some(b'/') {
+            },
+            47 /* '/' */ => {
+                if self.peek() == Some(47 /* '/' */) {
                     self.read_character();
                     Token::new(TokenType::FloorDivide, None, TokenCategory::Operators)
                 } else {
                     Token::new(TokenType::Divide, None, TokenCategory::Operators)
                 }
-            }
-            b'%' => Token::new(TokenType::Modulo, None, TokenCategory::Operators),
-            b'=' => {
-                if self.peek() == Some(b'=') {
+            },
+            37 /* '%' */ => Token::new(TokenType::Modulo, None, TokenCategory::Operators),
+            61 /* '=' */ => {
+                if self.peek() == Some(61 /* '=' */) {
                     self.read_character();
                     Token::new(TokenType::Equal, None, TokenCategory::Comparison)
                 } else {
                     Token::new(TokenType::Assign, None, TokenCategory::Operators)
                 }
-            }
-            b'!' => {
-                if self.peek() == Some(b'=') {
+            },
+            33 /* '!' */ => {
+                if self.peek() == Some(61 /* '=' */) {
                     self.read_character();
                     Token::new(TokenType::NotEqual, None, TokenCategory::Comparison)
                 } else {
                     Token::new(TokenType::NotCmp, None, TokenCategory::Comparison)
                 }
-            }
-            b'>' => {
+            },
+            62 /* '>' */ => {
                 if let Some(val) = self.peek() {
                     self.read_character();
                     match val {
-                        b'=' => {
-                            Token::new(TokenType::GreaterEqual, None, TokenCategory::Comparison)
-                        }
-                        b'>' => Token::new(TokenType::ShiftRight, None, TokenCategory::Operators),
+                        61 /* '=' */ => Token::new(TokenType::GreaterEqual, None, TokenCategory::Comparison),
+                        62 /* '>' */ => Token::new(TokenType::ShiftRight, None, TokenCategory::Operators),
                         _ => unreachable!("Lexer error on '>'"),
                     }
                 } else {
                     Token::new(TokenType::Greater, None, TokenCategory::Comparison)
                 }
-            }
-            b'<' => {
+            },
+            60 /* '<' */ => {
                 if let Some(val) = self.peek() {
                     self.read_character();
                     match val {
-                        b'=' => Token::new(TokenType::LessEqual, None, TokenCategory::Comparison),
-                        b'<' => Token::new(TokenType::ShiftLeft, None, TokenCategory::Operators),
+                        61 /* '=' */ => Token::new(TokenType::LessEqual, None, TokenCategory::Comparison),
+                        60 /* '<' */ => Token::new(TokenType::ShiftLeft, None, TokenCategory::Operators),
                         _ => unreachable!("Lexer error on '<'"),
                     }
                 } else {
                     Token::new(TokenType::Less, None, TokenCategory::Comparison)
                 }
-            }
-            b'^' => Token::new(TokenType::BitwiseXor, None, TokenCategory::Operators),
-            b'~' => Token::new(TokenType::BitwiseNot, None, TokenCategory::Operators),
-            b'\n' => match self.indent_diff() {
+            },
+            94 /* '^' */ => Token::new(TokenType::BitwiseXor, None, TokenCategory::Operators),
+            126 /* '~' */ => Token::new(TokenType::BitwiseNot, None, TokenCategory::Operators),
+            10 /* '\n' */ => match self.indent_diff() {
                 val if val > 0 => Token::new(
                     TokenType::Indent,
                     Some(val.to_string()),
@@ -486,12 +503,12 @@ impl Lexer {
                 0 => Token::new(TokenType::Newline, None, TokenCategory::Whitespace),
                 _ => unreachable!("Indentation error"),
             },
-            b'0'..=b'9' => {
+            48..=57 /* '0'..'9' */  => {
                 // Start of a number literal
                 let mut number_str = self.read_num(); // You need to define read_number method
                 if let Some(next_char) = self.peek() {
                     // Check for a floating-point literal
-                    if next_char == b'.' {
+                    if next_char == 46 /* '.' */ {
                         self.read_character(); // Consume the '.'
                         number_str.push('.'); // Add '.' to the number string
                         number_str.push_str(&self.read_num()); // Append the rest of the floating-point number
@@ -503,7 +520,8 @@ impl Lexer {
                     TokenCategory::Literal,
                 ));
             }
-            b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
+            // b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
+            _letter @ 97..=122 /* 'a'..'z' */ | _letter @ 65..=90 /* 'A'..'Z' */ | _letter @ 95 /* '_' */ => {
                 let ident = self.read_ident();
 
                 let (token_type, token_category) = match ident.as_str() {
@@ -551,7 +569,7 @@ impl Lexer {
                 return Ok(Token::new(token_type, None, token_category));
             }
             0 => Token::new(TokenType::Eof, None, TokenCategory::Literal),
-            char => unreachable!("shouldn't reach this, tried to match {}", char as char),
+            char => unreachable!("shouldn't reach this, tried to match {}", char),
         };
 
         self.read_character();
@@ -560,6 +578,7 @@ impl Lexer {
 
     pub fn handle_next_whitespace(&mut self) {
         while self.read_position < self.input.len() && WHITESPACE.contains(&self.character) {
+        // while self.read_position < self.input.len() && self.character.is_ascii_whitespace() {
             self.read_character();
         }
     }
@@ -590,21 +609,31 @@ impl Lexer {
 
     pub fn read_ident(&mut self) -> String {
         let pos = self.position;
-        while self.character.is_ascii_alphanumeric() || self.character == b'_' {
+        while let _letter @ 97..=122 /* 'a'..'z' */ | _letter @ 65..=90 /* 'A'..'Z' */ | _letter @ 95 /* '_' */ = self.character {
             self.read_character();
         }
-        String::from_utf8_lossy(&self.input[pos..self.position]).to_string()
+        // loop {
+        //     match self.character {
+        //         letter @ 97..=122 /* 'a'..'z' */ | letter @ 65..=90 /* 'A'..'Z' */ | letter @ 95 /* '_' */ => self.
+        //         _ => break
+        //     }
+        // }
+        let sequence = &self.input[pos..self.position];
+        sequence.iter()
+         .filter_map(|&code_point| std::char::from_u32(code_point))
+         .collect() 
     }
 
     pub fn read_num(&mut self) -> String {
         let pos = self.position;
-        while self.character.is_ascii_digit() {
+        while let _number @ 48..=57 = self.character {
             self.read_character();
         }
-        String::from_utf8_lossy(&self.input[pos..self.position]).to_string()
+        let sequence = &self.input[pos..self.position];
+        sequence.iter().filter_map(| &code_point| std::char::from_u32(code_point)).collect()
     }
 
-    pub fn peek(&mut self) -> Option<u8> {
+    pub fn peek(&mut self) -> Option<u32> {
         if self.read_position >= self.input.len()
             || WHITESPACE.contains(&self.input[self.read_position])
         {
@@ -618,10 +647,12 @@ impl Lexer {
             return None;
         }
 
-        Some(
-            String::from_utf8_lossy(&self.input[self.read_position..=self.position + 1])
-                .to_string(),
-        )
+        let sequence = &self.input[self.read_position..self.position + 1];
+        Some(sequence.iter().filter_map(| &code_point| std::char::from_u32(code_point)).collect())
+        // Some(
+        //     String::from_utf8_lossy(&self.input[self.read_position..=self.position + 1])
+        //         .to_string(),
+        // )
     }
 
     pub fn tokenize_input(&mut self) {
@@ -639,7 +670,7 @@ mod tests {
 
     #[test]
     fn handles_whitespace() {
-        let input = "def    ";
+        let input = "def\u{a0}";
         let tokens = vec![Token::new(TokenType::Def, None, TokenCategory::Keyword)];
 
         run_tests_explicit(input, tokens)
