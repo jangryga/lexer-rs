@@ -2,10 +2,8 @@ use console_error_panic_hook::set_once;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
-
 static WHITESPACE: [u32; 2] = [32, 160];
 
-// Usage: console_log!("Hello {}!", "world");
 macro_rules! console_log {
     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
 }
@@ -15,10 +13,8 @@ pub fn log(s: &str) {
     web_sys::console::log_1(&s.into());
 }
 
-
 #[cfg(not(target_arch = "wasm32"))]
 fn log(message: &str) {
-    // non-wasm logging, e.g., to console
     println!("{}", message);
 }
 
@@ -26,7 +22,7 @@ fn log(message: &str) {
 const TS_TOKEN_INTERFACE: &'static str = r#"
 export interface Token {
   kind: TokenType;
-  value?: string; // `value` is optional because it's an Option<String> in Rust
+  value: string | undefined; // `value` is optional because it's an Option<String> in Rust
   category: TokenCategory;
 }
 "#;
@@ -56,13 +52,6 @@ pub fn main_js() -> Result<(), JsValue> {
 
 #[wasm_bindgen]
 pub fn parse(input: &str) -> Result<JsValue, JsValue> {
-
-    console_log!("Whole input 1 {input}");
-    // Debugging output
-    input.chars().enumerate().for_each(|(i, c)| {
-        console_log!("Char {} at position {}: {:?}", c as u32, i, c);
-    });
-
     let mut lexer = Lexer::new(input);
     lexer.tokenize_input();
     let result: Vec<Token> = lexer.tokens;
@@ -83,6 +72,7 @@ pub enum TokenCategory {
     Literal,
     Identifier,
     Whitespace,
+    Eof,
 }
 
 #[wasm_bindgen]
@@ -331,10 +321,6 @@ pub struct Lexer {
 
 impl Lexer {
     pub fn new(input: &str) -> Lexer {
-        // console_log!("Init input: {input}");
-        // let x: Vec<u32> = 
-        // console_log!("Init input: {:?}", x);
-
         let mut lex = Lexer {
             character: 0,
             position: 0,
@@ -348,11 +334,7 @@ impl Lexer {
     }
 
     pub fn tokenize_next_character(&mut self) -> Result<Token, ()> {
-        console_log!("Whole input 1 {:?}", self.input);
-        console_log!("BEFORE character {}, position {}, read_position {}, str length {}", self.character, self.position, self.read_position, self.input.len());
         self.handle_next_whitespace();
-
-        console_log!("AFTER character {}, position {}, read_position {}, str length {}", self.character, self.position, self.read_position, self.input.len());
 
         let token = match self.character {
             40 /* '(' */ => Token::new(
@@ -568,7 +550,7 @@ impl Lexer {
                 }
                 return Ok(Token::new(token_type, None, token_category));
             }
-            0 => Token::new(TokenType::Eof, None, TokenCategory::Literal),
+            0 => Token::new(TokenType::Eof, None, TokenCategory::Eof),
             char => unreachable!("shouldn't reach this, tried to match {}", char),
         };
 
@@ -577,8 +559,8 @@ impl Lexer {
     }
 
     pub fn handle_next_whitespace(&mut self) {
-        while self.read_position < self.input.len() && WHITESPACE.contains(&self.character) {
-        // while self.read_position < self.input.len() && self.character.is_ascii_whitespace() {
+        while self.read_position <= self.input.len() && WHITESPACE.contains(&self.character) {
+            // while self.read_position < self.input.len() && self.character.is_ascii_whitespace() {
             self.read_character();
         }
     }
@@ -619,9 +601,10 @@ impl Lexer {
         //     }
         // }
         let sequence = &self.input[pos..self.position];
-        sequence.iter()
-         .filter_map(|&code_point| std::char::from_u32(code_point))
-         .collect() 
+        sequence
+            .iter()
+            .filter_map(|&code_point| std::char::from_u32(code_point))
+            .collect()
     }
 
     pub fn read_num(&mut self) -> String {
@@ -630,7 +613,10 @@ impl Lexer {
             self.read_character();
         }
         let sequence = &self.input[pos..self.position];
-        sequence.iter().filter_map(| &code_point| std::char::from_u32(code_point)).collect()
+        sequence
+            .iter()
+            .filter_map(|&code_point| std::char::from_u32(code_point))
+            .collect()
     }
 
     pub fn peek(&mut self) -> Option<u32> {
@@ -648,7 +634,12 @@ impl Lexer {
         }
 
         let sequence = &self.input[self.read_position..self.position + 1];
-        Some(sequence.iter().filter_map(| &code_point| std::char::from_u32(code_point)).collect())
+        Some(
+            sequence
+                .iter()
+                .filter_map(|&code_point| std::char::from_u32(code_point))
+                .collect(),
+        )
         // Some(
         //     String::from_utf8_lossy(&self.input[self.read_position..=self.position + 1])
         //         .to_string(),
@@ -669,11 +660,26 @@ mod tests {
     use crate::{Lexer, Token, TokenCategory, TokenType};
 
     #[test]
-    fn handles_whitespace() {
-        let input = "def\u{a0}";
-        let tokens = vec![Token::new(TokenType::Def, None, TokenCategory::Keyword)];
+    fn handle_trailing_whitespace() {
+        let mut lexer = Lexer {
+            character: 0,
+            current_indent: 0,
+            position: 0,
+            read_position: 0,
+            tokens: Vec::<Token>::new(),
+            // input: vec![97, 97, 97, 32],
+            input: vec![62, 160],
+        };
+        lexer.read_character();
 
-        run_tests_explicit(input, tokens)
+        // let output = vec![Token::new(TokenType::Ident, Some(String::from("aaa")), TokenCategory::Identifier)];
+        let output = vec![
+            Token::new(TokenType::Greater, None, TokenCategory::Comparison),
+            Token::new(TokenType::Eof, None, TokenCategory::Eof),
+        ];
+
+        lexer.tokenize_input();
+        assert_eq!(lexer.tokens, output)
     }
 
     #[test]
@@ -853,6 +859,7 @@ mod tests {
                 TokenCategory::PunctuationAndGroup,
             ),
             Token::new(TokenType::Newline, None, TokenCategory::Whitespace),
+            Token::new(TokenType::Eof, None, TokenCategory::Eof),
         ];
 
         run_tests_explicit(input, tokens);
