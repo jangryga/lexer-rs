@@ -1,5 +1,4 @@
-#[allow(unused_macros)]
-
+#[allow(unused_macros, dead_code)]
 pub mod lexer;
 
 #[cfg(test)]
@@ -7,30 +6,36 @@ mod tests {
     use crate::lexer::{Lexer, Token, TokenCategory, TokenKind};
 
     #[test]
-    fn handle_trailing_whitespace() {
+    fn if_handles_trailing_whitespace() {
         let mut lexer = Lexer {
             character: 0,
             current_indent: 0,
             position: 0,
             read_position: 0,
-            tokens: Vec::<Token>::new(),
-            // input: vec![97, 97, 97, 32],
-            input: vec![62, 160],
+            input: vec![97, 97, 97, 32],
         };
         lexer.read_character();
 
-        // let output = vec![Token::new(TokenKind::Ident, Some(String::from("aaa")), TokenCategory::Identifier)];
         let output = vec![
-            Token::new(TokenKind::Greater, None, TokenCategory::Comparison),
+            Token::new(
+                TokenKind::Ident,
+                Some(String::from("aaa")),
+                TokenCategory::Identifier,
+            ),
             Token::new(TokenKind::Eof, None, TokenCategory::Eof),
         ];
+        let mut tokens: Vec<Token> = Vec::new();
 
-        lexer.tokenize_input();
-        assert_eq!(lexer.tokens, output)
+        while lexer.read_position <= lexer.input.len() {
+            if let Ok(token) = lexer.tokenize_next_character() {
+                tokens.push(token);
+            }
+        }
+        assert_eq!(tokens, output)
     }
 
     #[test]
-    fn single_tokens() {
+    fn if_handles_single_tokens() {
         let exps = vec![
             (
                 "variable_name",
@@ -57,11 +62,11 @@ mod tests {
                 )],
             ),
         ];
-        run_tests(exps)
+        test_multiple(exps)
     }
 
     #[test]
-    fn one_line_expressions() {
+    fn if_handles_one_line_expressions() {
         let tokens = vec![
             Token::new(TokenKind::Def, None, TokenCategory::Keyword),
             Token::new(
@@ -92,11 +97,11 @@ mod tests {
             ),
             Token::new(TokenKind::Colon, None, TokenCategory::PunctuationAndGroup),
         ];
-        run_tests_explicit("def my_func(a, b):", tokens);
+        test_single("def my_func(a, b):", tokens);
     }
 
     #[test]
-    fn multiline() {
+    fn if_handles_multiline_input() {
         let input = r#"def my_func(a, b):
         return a + b
     
@@ -137,7 +142,7 @@ mod tests {
                 TokenKind::Indent,
                 Some(String::from("4")),
                 TokenCategory::Whitespace,
-            ), 
+            ),
             Token::new(TokenKind::Return, None, TokenCategory::Keyword),
             Token::new(
                 TokenKind::Ident,
@@ -209,10 +214,10 @@ mod tests {
             Token::new(TokenKind::Eof, None, TokenCategory::Eof),
         ];
 
-        run_tests_explicit(input, tokens);
+        test_single(input, tokens);
     }
 
-    fn run_tests_explicit(input: &str, tokens: Vec<Token>) {
+    fn test_single(input: &str, tokens: Vec<Token>) {
         let mut lexer = Lexer::new(Some(input));
         lexer.current_indent = 4;
 
@@ -223,7 +228,7 @@ mod tests {
         }
     }
 
-    fn run_tests(exps: Vec<(&str, Vec<Token>)>) {
+    fn test_multiple(exps: Vec<(&str, Vec<Token>)>) {
         for (input, expected) in exps {
             let mut lexer = Lexer::new(Some(input));
             for (i, exp_token) in expected.iter().enumerate() {

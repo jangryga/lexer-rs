@@ -1,10 +1,10 @@
 ## Working on:
 ### Parser
-- [x] handle indents
-- [ ] detect comments
-- [ ] detect comment (templates)
-- [ ] detect dunder methods
+- [ ] handle comments
+- [ ] more methods (dunder, more other builtins)
 - [ ] tabs support
+
+Note: initializing with None requires calling `self.read_character()`
 
 ### Wasm adapter
 inc.

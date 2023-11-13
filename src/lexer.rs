@@ -27,13 +27,12 @@ export interface TokenType {
 }
 "#;
 
-// TODO: move to utils or init code 
+// TODO: move to utils or init code
 #[wasm_bindgen(start)]
 pub fn main_js() -> Result<(), JsValue> {
     set_once();
     Ok(())
 }
-
 
 #[wasm_bindgen]
 #[derive(PartialEq, Debug, Serialize, Deserialize)]
@@ -293,18 +292,28 @@ pub struct LexerWrapper {
 impl LexerWrapper {
     #[wasm_bindgen(constructor)]
     pub fn new() -> LexerWrapper {
-        LexerWrapper { lexer: Lexer::new(None) }
+        LexerWrapper {
+            lexer: Lexer::new(None),
+        }
     }
 
     pub fn tokenize(&mut self, input: &str) -> Result<JsValue, JsValue> {
         self.lexer.input = input.chars().map(|ch| ch as u32).collect();
-        self.lexer.tokenize_input();
-        let tokens = &self.lexer.tokens;
+        self.lexer.position = 0;
+        self.lexer.read_position = 0;
+        self.lexer.current_indent = 0;
+        self.lexer.read_character();
+        let mut tokens: Vec<Token> = Vec::new();
 
-        serde_wasm_bindgen::to_value(tokens).map_err(|e| JsValue::from_str(&e.to_string()))
+        while self.lexer.read_position <= self.lexer.input.len() {
+            if let Ok(token) = self.lexer.tokenize_next_character() {
+                tokens.push(token);
+            }
+        }
+
+        serde_wasm_bindgen::to_value(&tokens).map_err(|e| JsValue::from_str(&e.to_string()))
     }
 }
-
 
 #[derive(Serialize, Deserialize)]
 pub struct Lexer {
@@ -312,7 +321,6 @@ pub struct Lexer {
     pub position: usize,
     pub read_position: usize,
     pub current_indent: i32,
-    pub tokens: Vec<Token>,
     pub character: u32,
 }
 
@@ -326,21 +334,18 @@ impl Lexer {
                     read_position: 0,
                     current_indent: 0,
                     input: text.chars().map(|ch| ch as u32).collect(),
-                    tokens: Vec::<Token>::new(),
                 };
+                // I don't like this - initializing with input exhibits different behavior
                 lex.read_character();
                 lex
-            },
-            None => {
-                Lexer {
-                    character: 0,
-                    position: 0,
-                    read_position: 0,
-                    current_indent: 0,
-                    input: Vec::new(),
-                    tokens: Vec::<Token>::new(),
-                }
             }
+            None => Lexer {
+                character: 0,
+                position: 0,
+                read_position: 0,
+                current_indent: 0,
+                input: Vec::new(),
+            },
         }
     }
 
@@ -512,7 +517,7 @@ impl Lexer {
                     Some(number_str),
                     TokenCategory::Literal,
                 ));
-            }
+            },
             // b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
             _letter @ 97..=122 /* 'a'..'z' */ | _letter @ 65..=90 /* 'A'..'Z' */ | _letter @ 95 /* '_' */ => {
                 let ident = self.read_ident();
@@ -560,8 +565,10 @@ impl Lexer {
                     ));
                 }
                 return Ok(Token::new(token_type, None, token_category));
-            }
-            0 => Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+            },
+            0 => {
+                console_log!("matched 0, char is : {}", self.character);
+                Token::new(TokenKind::Eof, None, TokenCategory::Eof)},
             char => unreachable!("shouldn't reach this, tried to match {}", char),
         };
 
@@ -644,14 +651,5 @@ impl Lexer {
                 .filter_map(|&code_point| std::char::from_u32(code_point))
                 .collect(),
         )
-    }
-
-    pub fn tokenize_input(&mut self) {
-        self.tokens = Vec::new();
-        while self.read_position <= self.input.len() {
-            if let Ok(token) = self.tokenize_next_character() {
-                self.tokens.push(token);
-            }
-        }
     }
 }
