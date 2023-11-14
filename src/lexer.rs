@@ -487,19 +487,22 @@ impl Lexer {
             },
             94 /* '^' */ => Token::new(TokenKind::BitwiseXor, None, TokenCategory::Operators),
             126 /* '~' */ => Token::new(TokenKind::BitwiseNot, None, TokenCategory::Operators),
-            10 /* '\n' */ => match self.indent_diff() {
-                val if val > 0 => Token::new(
-                    TokenKind::Indent,
-                    Some(val.to_string()),
-                    TokenCategory::Whitespace,
-                ),
-                val if val < 0 => Token::new(
-                    TokenKind::Dedent,
-                    Some(val.abs().to_string()),
-                    TokenCategory::Whitespace,
-                ),
-                0 => Token::new(TokenKind::Newline, None, TokenCategory::Whitespace),
-                _ => unreachable!("Indentation error"),
+            10 /* '\n' */ => {
+                console_log!("Matching newline");
+                match self.indent_diff() {
+                    val if val > 0 => Token::new(
+                        TokenKind::Indent,
+                        Some(val.to_string()),
+                        TokenCategory::Whitespace,
+                    ),
+                    val if val < 0 => Token::new(
+                        TokenKind::Dedent,
+                        Some(val.abs().to_string()),
+                        TokenCategory::Whitespace,
+                    ),
+                    0 => Token::new(TokenKind::Newline, None, TokenCategory::Whitespace),
+                    _ => unreachable!("Indentation error"),
+                }
             },
             48..=57 /* '0'..'9' */  => {
                 // Start of a number literal
@@ -566,9 +569,7 @@ impl Lexer {
                 }
                 return Ok(Token::new(token_type, None, token_category));
             },
-            0 => {
-                console_log!("matched 0, char is : {}", self.character);
-                Token::new(TokenKind::Eof, None, TokenCategory::Eof)},
+            0 => Token::new(TokenKind::Eof, None, TokenCategory::Eof),
             char => unreachable!("shouldn't reach this, tried to match {}", char),
         };
 
