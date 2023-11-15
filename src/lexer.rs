@@ -307,6 +307,13 @@ impl LexerWrapper {
 
         while self.lexer.read_position <= self.lexer.input.len() {
             if let Ok(token) = self.lexer.tokenize_next_character() {
+                if token.kind == TokenKind::Indent || token.kind == TokenKind::Dedent {
+                    tokens.push(Token::new(
+                        TokenKind::Newline,
+                        None,
+                        TokenCategory::Whitespace,
+                    ))
+                }
                 tokens.push(token);
             }
         }
