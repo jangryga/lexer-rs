@@ -21,9 +21,9 @@ fn log(message: &str) {
 #[wasm_bindgen(typescript_custom_section)]
 const TS_TOKEN_INTERFACE: &'static str = r#"
 export interface TokenType {
-  kind: TokenKind;
+  kind: string; // TokenKind
   value: string | undefined; // `value` is optional because it's an Option<String> in Rust
-  category: TokenCategory;
+  category: string // TokenCategory; 
 }
 "#;
 
