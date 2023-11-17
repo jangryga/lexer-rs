@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn if_handles_multiline_input() {
         let input = r#"def my_func(a, b):
-        return a + b
+        return a +b
     
     res = my_func(1, 32)
     print(res)

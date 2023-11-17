@@ -411,9 +411,9 @@ impl Lexer {
             ),
             58 /* ':' */ => Token::new(TokenKind::Colon, None, TokenCategory::PunctuationAndGroup),
             45 /* '-' */ => {
-                if let Some(val) = self.peek() {
+                if [Some(62), Some(45), Some(61)].contains(&self.peek()) {
                     self.read_character();
-                    match val {
+                    match self.character {
                         62 /* '>' */ => Token::new(TokenKind::Arrow, None, TokenCategory::Operators),
                         45 /* '-' */ => Token::new(TokenKind::Decrement, None, TokenCategory::Operators),
                         61 /* '=' */ => Token::new(TokenKind::MinusEqual, None, TokenCategory::Operators),
@@ -424,9 +424,9 @@ impl Lexer {
                 }
             },
             43 /* '+' */ => {
-                if let Some(val) = self.peek() {
+                if [Some(43), Some(61)].contains(&self.peek())  {
                     self.read_character();
-                    match val {
+                    match self.character {
                         43 /* '+' */ => Token::new(TokenKind::Increment, None, TokenCategory::Operators),
                         61 /* '=' */ => Token::new(TokenKind::PlusEqual, None, TokenCategory::Operators),
                         _ => unreachable!("Lexer error on '+'"),
@@ -469,9 +469,9 @@ impl Lexer {
                 }
             },
             62 /* '>' */ => {
-                if let Some(val) = self.peek() {
+                if [Some(61), Some(62)].contains(&self.peek()) {
                     self.read_character();
-                    match val {
+                    match self.character {
                         61 /* '=' */ => Token::new(TokenKind::GreaterEqual, None, TokenCategory::Comparison),
                         62 /* '>' */ => Token::new(TokenKind::ShiftRight, None, TokenCategory::Operators),
                         _ => unreachable!("Lexer error on '>'"),
@@ -481,9 +481,9 @@ impl Lexer {
                 }
             },
             60 /* '<' */ => {
-                if let Some(val) = self.peek() {
+                if [Some(61), Some(60)].contains(&self.peek()) {
                     self.read_character();
-                    match val {
+                    match self.character {
                         61 /* '=' */ => Token::new(TokenKind::LessEqual, None, TokenCategory::Comparison),
                         60 /* '<' */ => Token::new(TokenKind::ShiftLeft, None, TokenCategory::Operators),
                         _ => unreachable!("Lexer error on '<'"),
