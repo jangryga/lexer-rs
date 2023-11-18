@@ -514,7 +514,6 @@ impl Lexer {
             94 /* '^' */ => Token::new(TokenKind::BitwiseXor, None, TokenCategory::Operators),
             126 /* '~' */ => Token::new(TokenKind::BitwiseNot, None, TokenCategory::Operators),
             10 /* '\n' */ => {
-                console_log!("Matching newline");
                 match self.indent_diff() {
                     val if val > 0 => Token::new(
                         TokenKind::Indent,
