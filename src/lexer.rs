@@ -281,6 +281,7 @@ pub enum TokenKind {
     Eof,
     Ident,
     Newline,
+    Whitespace
 }
 
 #[wasm_bindgen]
@@ -293,7 +294,7 @@ impl LexerWrapper {
     #[wasm_bindgen(constructor)]
     pub fn new() -> LexerWrapper {
         LexerWrapper {
-            lexer: Lexer::new(None),
+            lexer: Lexer::new(None, LexerMode::Editor),
         }
     }
 
@@ -323,16 +324,23 @@ impl LexerWrapper {
 }
 
 #[derive(Serialize, Deserialize)]
+pub enum LexerMode {
+    Ast,
+    Editor
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct Lexer {
     pub input: Vec<u32>,
     pub position: usize,
     pub read_position: usize,
     pub current_indent: i32,
     pub character: u32,
+    pub mode: LexerMode,
 }
 
 impl Lexer {
-    pub fn new(input: Option<&str>) -> Lexer {
+    pub fn new(input: Option<&str>, mode: LexerMode) -> Lexer {
         match input {
             Some(text) => {
                 let mut lex = Lexer {
@@ -341,6 +349,7 @@ impl Lexer {
                     read_position: 0,
                     current_indent: 0,
                     input: text.chars().map(|ch| ch as u32).collect(),
+                    mode
                 };
                 // I don't like this - initializing with input exhibits different behavior
                 lex.read_character();
@@ -352,6 +361,7 @@ impl Lexer {
                 read_position: 0,
                 current_indent: 0,
                 input: Vec::new(),
+                mode
             },
         }
     }
