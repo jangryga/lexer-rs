@@ -306,7 +306,7 @@ impl LexerWrapper {
         self.lexer.read_character();
         let mut tokens: Vec<Token> = Vec::new();
 
-        while self.lexer.read_position <= self.lexer.input.len() {
+        while self.lexer.read_position <= self.lexer.input.len() + 1 {
             if let Ok(token) = self.lexer.tokenize_next_character() {
                 if token.kind == TokenKind::Indent || token.kind == TokenKind::Dedent {
                     tokens.push(Token::new(
@@ -323,7 +323,7 @@ impl LexerWrapper {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq)]
 pub enum LexerMode {
     Ast,
     Editor
@@ -367,9 +367,18 @@ impl Lexer {
     }
 
     pub fn tokenize_next_character(&mut self) -> Result<Token, ()> {
-        self.handle_next_whitespace();
+        if self.mode == LexerMode::Ast { self.handle_next_whitespace(); }
+        
 
         let token = match self.character {
+            32 | 160 => {
+                let mut length = 0;
+                while self.read_position <= self.input.len() && WHITESPACE.contains(&self.character) {
+                    length += 1;
+                    self.read_character();
+                }
+                return Ok(Token::new(TokenKind::Whitespace, Some(length.to_string()), TokenCategory::Whitespace))
+            },
             40 /* '(' */ => Token::new(
                 TokenKind::LeftParenthesis,
                 None,

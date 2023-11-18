@@ -219,12 +219,24 @@ mod tests {
     }
 
     #[test]
-    fn if_editor_mode_keeps_whitespace() {
+    fn if_editor_mode_keeps_whitespace_short() {
+        let input = "def  ";
+
+        let tokens: Vec<Token> = vec![Token::new(TokenKind::Def, None, TokenCategory::Keyword), 
+        Token::new(TokenKind::Whitespace, Some(String::from("2")), TokenCategory::Whitespace), 
+        Token::new(TokenKind::Eof, None, TokenCategory::Eof),];
+
+        test_single(input, tokens, LexerMode::Editor)
+    }
+
+    #[test]
+    fn if_editor_mode_keeps_whitespace_long() {
         let input = r#"def my_func(a, b):  
         return a +b   
     "#;
         let tokens: Vec<Token> = vec![
             Token::new(TokenKind::Def, None, TokenCategory::Keyword),
+            Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
             Token::new(
                 TokenKind::Ident,
                 Some(String::from("my_func")),
@@ -260,20 +272,20 @@ mod tests {
                 TokenCategory::Whitespace,
             ),
             Token::new(TokenKind::Return, None, TokenCategory::Keyword),
-            Token::new(TokenKind::Newline, Some(String::from("1")), TokenCategory::Whitespace),
+            Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
             Token::new(
                 TokenKind::Ident,
                 Some(String::from("a")),
                 TokenCategory::Identifier,
             ),
-            Token::new(TokenKind::Newline, Some(String::from("1")), TokenCategory::Whitespace),
+            Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
             Token::new(TokenKind::Plus, None, TokenCategory::Operators),
             Token::new(
                 TokenKind::Ident,
                 Some(String::from("b")),
                 TokenCategory::Identifier,
             ),
-            Token::new(TokenKind::Newline, Some(String::from("3")), TokenCategory::Whitespace),
+            Token::new(TokenKind::Whitespace, Some(String::from("3")), TokenCategory::Whitespace),
             Token::new(TokenKind::Eof, None, TokenCategory::Eof),
         ];
         test_single(input, tokens, LexerMode::Editor);
@@ -285,7 +297,7 @@ mod tests {
 
         for token in tokens {
             let current = lexer.tokenize_next_character();
-            println!("{:?} {:?}", token, current);
+            println!("[INFO] {:?} {:?}", token, current);
             assert!(token == current.unwrap());
         }
     }
