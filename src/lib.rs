@@ -286,6 +286,7 @@ mod tests {
                 TokenCategory::Identifier,
             ),
             Token::new(TokenKind::Whitespace, Some(String::from("3")), TokenCategory::Whitespace),
+            Token::new(TokenKind::Dedent, Some(String::from("4")), TokenCategory::Whitespace),
             Token::new(TokenKind::Eof, None, TokenCategory::Eof),
         ];
         test_single(input, tokens, LexerMode::Editor);

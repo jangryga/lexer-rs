@@ -514,6 +514,9 @@ impl Lexer {
             94 /* '^' */ => Token::new(TokenKind::BitwiseXor, None, TokenCategory::Operators),
             126 /* '~' */ => Token::new(TokenKind::BitwiseNot, None, TokenCategory::Operators),
             10 /* '\n' */ => {
+                if self.peek() == Some(10) {
+                    self.read_character();
+                }
                 match self.indent_diff() {
                     val if val > 0 => Token::new(
                         TokenKind::Indent,
