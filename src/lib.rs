@@ -219,6 +219,17 @@ mod tests {
     }
 
     #[test]
+    fn if_handles_singleline_comments() {
+        let input = r#"# this is my comment
+    "#;
+        let tokens: Vec<Token> = vec![Token::new(TokenKind::CommentSingleline, Some(String::from("# this is my comment")), TokenCategory::Comment), 
+        Token::new(TokenKind::Newline, None, TokenCategory::Whitespace),
+        Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+        ];
+
+        test_single(input, tokens, LexerMode::Editor);
+    }
+    #[test]
     fn if_editor_mode_keeps_whitespace_short() {
         let input = "def  ";
 

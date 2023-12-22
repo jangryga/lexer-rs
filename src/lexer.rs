@@ -48,6 +48,7 @@ pub enum TokenCategory {
     Identifier,
     Whitespace,
     Eof,
+    Comment
 }
 
 #[wasm_bindgen]
@@ -79,6 +80,11 @@ impl Token {
 pub enum TokenKind {
     Indent,
     Dedent,
+
+    // Comments
+    CommentMultilineStart,
+    CommentMultilineEnd,
+    CommentSingleline,
 
     // Standard keywords
     False,
@@ -379,6 +385,7 @@ impl Lexer {
                 }
                 return Ok(Token::new(TokenKind::Whitespace, Some(length.to_string()), TokenCategory::Whitespace))
             },
+            35 /* '#' */ => Token::new(TokenKind::CommentSingleline, Some(self.handle_singleline_comment()), TokenCategory::Comment),
             40 /* '(' */ => Token::new(
                 TokenKind::LeftParenthesis,
                 None,
@@ -623,6 +630,20 @@ impl Lexer {
 
         self.current_indent = indent_length;
         indent_length - initial
+    }
+
+    pub fn handle_singleline_comment(&mut self) -> String {
+        let pos = self.position;
+
+        while self.character != 10 /* '\n' */ {
+            self.read_character();
+        }
+
+        let sequence = &self.input[pos..self.position];
+        sequence
+            .iter()
+            .filter_map(|&code_point| std::char::from_u32(code_point))
+            .collect()
     }
 
     pub fn read_character(&mut self) {
