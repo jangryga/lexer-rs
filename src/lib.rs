@@ -3,7 +3,7 @@ pub mod lexer;
 
 #[cfg(test)]
 mod tests {
-    use crate::lexer::{Lexer, Token, TokenCategory, TokenKind, LexerMode};
+    use crate::lexer::{Lexer, Token, TokenCategory, TokenKind, LexerMode, CommentMode};
 
     #[test]
     fn if_handles_trailing_whitespace() {
@@ -13,7 +13,8 @@ mod tests {
             position: 0,
             read_position: 0,
             input: vec![97, 97, 97, 32],
-            mode: LexerMode::Ast
+            mode: LexerMode::Ast,
+            comment_mode: CommentMode::Inactive
         };
         lexer.read_character();
 

@@ -313,6 +313,7 @@ impl LexerWrapper {
         let mut tokens: Vec<Token> = Vec::new();
 
         while self.lexer.read_position <= self.lexer.input.len() + 1 {
+            // this is a hack because tokenize_next_character doesn't return more than one token, hence why newline gets skipped
             if let Ok(token) = self.lexer.tokenize_next_character() {
                 if token.kind == TokenKind::Indent || token.kind == TokenKind::Dedent {
                     tokens.push(Token::new(
@@ -335,6 +336,19 @@ pub enum LexerMode {
     Editor
 }
 
+#[derive(Serialize, Deserialize, PartialEq)]
+pub enum CommentMode {
+    Active(CommentType),
+    Inactive
+}
+
+#[derive(Serialize, Deserialize, PartialEq)]
+pub enum CommentType {
+    SingleLine,
+    MultiLine,
+    Docstring, 
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct Lexer {
     pub input: Vec<u32>,
@@ -343,6 +357,7 @@ pub struct Lexer {
     pub current_indent: i32,
     pub character: u32,
     pub mode: LexerMode,
+    pub comment_mode: CommentMode,
 }
 
 impl Lexer {
@@ -355,7 +370,8 @@ impl Lexer {
                     read_position: 0,
                     current_indent: 0,
                     input: text.chars().map(|ch| ch as u32).collect(),
-                    mode
+                    mode,
+                    comment_mode: CommentMode::Inactive,
                 };
                 // I don't like this - initializing with input exhibits different behavior
                 lex.read_character();
@@ -367,7 +383,8 @@ impl Lexer {
                 read_position: 0,
                 current_indent: 0,
                 input: Vec::new(),
-                mode
+                mode,
+                comment_mode: CommentMode::Inactive,
             },
         }
     }
@@ -375,7 +392,6 @@ impl Lexer {
     pub fn tokenize_next_character(&mut self) -> Result<Token, ()> {
         if self.mode == LexerMode::Ast { self.handle_next_whitespace(); }
         
-
         let token = match self.character {
             32 | 160 => {
                 let mut length = 0;
@@ -385,7 +401,9 @@ impl Lexer {
                 }
                 return Ok(Token::new(TokenKind::Whitespace, Some(length.to_string()), TokenCategory::Whitespace))
             },
-            35 /* '#' */ => Token::new(TokenKind::CommentSingleline, Some(self.handle_singleline_comment()), TokenCategory::Comment),
+            35 /* '#' */ => {
+                self.comment_mode = CommentMode::Active(CommentType::SingleLine);
+                Token::new(TokenKind::CommentSingleline, Some(self.handle_singleline_comment()), TokenCategory::Comment)},
             40 /* '(' */ => Token::new(
                 TokenKind::LeftParenthesis,
                 None,
@@ -521,6 +539,9 @@ impl Lexer {
             94 /* '^' */ => Token::new(TokenKind::BitwiseXor, None, TokenCategory::Operators),
             126 /* '~' */ => Token::new(TokenKind::BitwiseNot, None, TokenCategory::Operators),
             10 /* '\n' */ => {
+                if self.comment_mode == CommentMode::Active(CommentType::SingleLine) {
+                    self.comment_mode = CommentMode::Inactive
+                }
                 if self.peek() == Some(10) {
                     self.read_character();
                 }
