@@ -82,8 +82,7 @@ pub enum TokenKind {
     Dedent,
 
     // Comments
-    CommentMultilineStart,
-    CommentMultilineEnd,
+    StringMultiline, // it can be both comment and string so it cannot be ignored
     CommentSingleline,
 
     // Standard keywords
@@ -346,7 +345,6 @@ pub enum CommentMode {
 pub enum CommentType {
     SingleLine,
     MultiLine,
-    Docstring, 
 }
 
 #[derive(Serialize, Deserialize)]
@@ -389,8 +387,36 @@ impl Lexer {
         }
     }
 
+    pub fn skip_comment(&mut self) {
+        todo!()
+    }
+
+    pub fn read_multiline_string(&mut self) -> String {
+        todo!()
+    }
+
+    pub fn read_string_literal(&mut self) -> String {
+        todo!()
+    }
+
+    pub fn read_singleline_comment(&mut self) -> String {
+        let pos: usize = self.position;
+
+        while self.character != 10 /* '\n' */ {
+            self.read_character();
+        }
+
+        let sequence = &self.input[pos..self.position];
+        sequence
+            .iter()
+            .filter_map(|&code_point| std::char::from_u32(code_point))
+            .collect()
+    }
+
     pub fn tokenize_next_character(&mut self) -> Result<Token, ()> {
-        if self.mode == LexerMode::Ast { self.handle_next_whitespace(); }
+        if self.mode == LexerMode::Ast { 
+            self.handle_next_whitespace();
+        }
         
         let token = match self.character {
             32 | 160 => {
@@ -401,9 +427,51 @@ impl Lexer {
                 }
                 return Ok(Token::new(TokenKind::Whitespace, Some(length.to_string()), TokenCategory::Whitespace))
             },
+            34 /* '"' */ => {
+                if self.double_peek() == Some(String::from("\"\"")) {
+                    self.read_character();
+                    self.read_character();
+                    
+                    let value = self.read_multiline_string();
+                    return Ok(Token::new(
+                        TokenKind::StringMultiline,
+                        Some(value),
+                        TokenCategory::Literal
+                    ))
+                }
+                let value: String = self.read_string_literal();
+                Token::new(TokenKind::String, Some(value), TokenCategory::Literal)
+            },
             35 /* '#' */ => {
-                self.comment_mode = CommentMode::Active(CommentType::SingleLine);
-                Token::new(TokenKind::CommentSingleline, Some(self.handle_singleline_comment()), TokenCategory::Comment)},
+                if self.mode == LexerMode::Ast {
+                    self.skip_comment();
+                    return self.tokenize_next_character();
+                }
+                let value = self.read_singleline_comment();
+                Token::new(TokenKind::CommentSingleline, Some(value), TokenCategory::Comment)
+            },
+            39 /* ''' */ => {
+                // it could be start of a string
+                if self.double_peek() == Some(String::from("''")) {
+                    self.read_character();
+                    self.read_character();
+                    
+                    let value = self.read_multiline_string();
+                    return Ok(Token::new(
+                        TokenKind::StringMultiline,
+                        Some(value),
+                        TokenCategory::Literal,
+                    ))
+                }
+                let value = self.read_string_literal();
+
+                Token::new(
+                    TokenKind::String,
+                    Some(value),
+                    TokenCategory::Literal,
+                )
+            },
+
             40 /* '(' */ => Token::new(
                 TokenKind::LeftParenthesis,
                 None,
@@ -651,20 +719,6 @@ impl Lexer {
 
         self.current_indent = indent_length;
         indent_length - initial
-    }
-
-    pub fn handle_singleline_comment(&mut self) -> String {
-        let pos = self.position;
-
-        while self.character != 10 /* '\n' */ {
-            self.read_character();
-        }
-
-        let sequence = &self.input[pos..self.position];
-        sequence
-            .iter()
-            .filter_map(|&code_point| std::char::from_u32(code_point))
-            .collect()
     }
 
     pub fn read_character(&mut self) {
