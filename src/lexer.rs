@@ -48,7 +48,7 @@ pub enum TokenCategory {
     Identifier,
     Whitespace,
     Eof,
-    Comment
+    Comment,
 }
 
 #[wasm_bindgen]
@@ -286,7 +286,7 @@ pub enum TokenKind {
     Eof,
     Ident,
     Newline,
-    Whitespace
+    Whitespace,
 }
 
 #[wasm_bindgen]
@@ -332,13 +332,13 @@ impl LexerWrapper {
 #[derive(Serialize, Deserialize, PartialEq)]
 pub enum LexerMode {
     Ast,
-    Editor
+    Editor,
 }
 
 #[derive(Serialize, Deserialize, PartialEq)]
 pub enum CommentMode {
     Active(CommentType),
-    Inactive
+    Inactive,
 }
 
 #[derive(Serialize, Deserialize, PartialEq)]
@@ -395,14 +395,32 @@ impl Lexer {
         todo!()
     }
 
-    pub fn read_string_literal(&mut self) -> String {
-        todo!()
+    pub fn read_string_literal(
+        &mut self,
+        end_character: u32, /* ' or "" => 34 or 39 */
+    ) -> String {
+        let pos: usize = self.position;
+
+        loop {
+            self.read_character();
+            if self.character == end_character && self.input[self.position - 1] != 92 {
+                break;
+            }
+        }
+
+        let sequence = &self.input[pos..self.position];
+        sequence
+            .iter()
+            .filter_map(|&code_point| std::char::from_u32(code_point))
+            .collect()
     }
 
     pub fn read_singleline_comment(&mut self) -> String {
         let pos: usize = self.position;
 
-        while self.character != 10 /* '\n' */ {
+        while self.character != 10
+        /* '\n' */
+        {
             self.read_character();
         }
 
@@ -414,10 +432,10 @@ impl Lexer {
     }
 
     pub fn tokenize_next_character(&mut self) -> Result<Token, ()> {
-        if self.mode == LexerMode::Ast { 
+        if self.mode == LexerMode::Ast {
             self.handle_next_whitespace();
         }
-        
+
         let token = match self.character {
             32 | 160 => {
                 let mut length = 0;
@@ -431,7 +449,6 @@ impl Lexer {
                 if self.double_peek() == Some(String::from("\"\"")) {
                     self.read_character();
                     self.read_character();
-                    
                     let value = self.read_multiline_string();
                     return Ok(Token::new(
                         TokenKind::StringMultiline,
@@ -439,7 +456,7 @@ impl Lexer {
                         TokenCategory::Literal
                     ))
                 }
-                let value: String = self.read_string_literal();
+                let value: String = self.read_string_literal(34);
                 Token::new(TokenKind::String, Some(value), TokenCategory::Literal)
             },
             35 /* '#' */ => {
@@ -455,7 +472,6 @@ impl Lexer {
                 if self.double_peek() == Some(String::from("''")) {
                     self.read_character();
                     self.read_character();
-                    
                     let value = self.read_multiline_string();
                     return Ok(Token::new(
                         TokenKind::StringMultiline,
@@ -463,7 +479,7 @@ impl Lexer {
                         TokenCategory::Literal,
                     ))
                 }
-                let value = self.read_string_literal();
+                let value = self.read_string_literal(39);
 
                 Token::new(
                     TokenKind::String,
@@ -471,7 +487,6 @@ impl Lexer {
                     TokenCategory::Literal,
                 )
             },
-
             40 /* '(' */ => Token::new(
                 TokenKind::LeftParenthesis,
                 None,
@@ -487,6 +502,13 @@ impl Lexer {
                 None,
                 TokenCategory::PunctuationAndGroup,
             ),
+            92 /* \ */ => {
+                // start of a string <- end will be auto-detected
+                if self.peek() == Some(34) || self.peek() == Some(39) {
+                    return self.tokenize_next_character();
+                }
+                Token::new(TokenKind::Ident, Some(String::from("\\")), TokenCategory::Identifier)
+            },
             93 /* ']' */ => Token::new(
                 TokenKind::RightBracket,
                 None,
@@ -607,9 +629,6 @@ impl Lexer {
             94 /* '^' */ => Token::new(TokenKind::BitwiseXor, None, TokenCategory::Operators),
             126 /* '~' */ => Token::new(TokenKind::BitwiseNot, None, TokenCategory::Operators),
             10 /* '\n' */ => {
-                if self.comment_mode == CommentMode::Active(CommentType::SingleLine) {
-                    self.comment_mode = CommentMode::Inactive
-                }
                 if self.peek() == Some(10) {
                     self.read_character();
                 }

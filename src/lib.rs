@@ -3,7 +3,7 @@ pub mod lexer;
 
 #[cfg(test)]
 mod tests {
-    use crate::lexer::{Lexer, Token, TokenCategory, TokenKind, LexerMode, CommentMode};
+    use crate::lexer::{CommentMode, Lexer, LexerMode, Token, TokenCategory, TokenKind};
 
     #[test]
     fn if_handles_trailing_whitespace() {
@@ -14,7 +14,7 @@ mod tests {
             read_position: 0,
             input: vec![97, 97, 97, 32],
             mode: LexerMode::Ast,
-            comment_mode: CommentMode::Inactive
+            comment_mode: CommentMode::Inactive,
         };
         lexer.read_character();
 
@@ -223,20 +223,44 @@ mod tests {
     fn if_handles_singleline_comments() {
         let input = r#"# this is my comment
     "#;
-        let tokens: Vec<Token> = vec![Token::new(TokenKind::CommentSingleline, Some(String::from("# this is my comment")), TokenCategory::Comment), 
-        Token::new(TokenKind::Newline, None, TokenCategory::Whitespace),
-        Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+        let tokens: Vec<Token> = vec![
+            Token::new(
+                TokenKind::CommentSingleline,
+                Some(String::from("# this is my comment")),
+                TokenCategory::Comment,
+            ),
+            Token::new(TokenKind::Newline, None, TokenCategory::Whitespace),
+            Token::new(TokenKind::Eof, None, TokenCategory::Eof),
         ];
 
         test_single(input, tokens, LexerMode::Editor);
     }
+
+    #[test]
+    fn if_handles_string_1() {
+        let input = r#""abc""#;
+        let tokens: Vec<Token> = vec![Token::new(
+            TokenKind::String,
+            Some(String::from("abc")),
+            TokenCategory::Literal,
+        )];
+
+        test_single(input, tokens, LexerMode::Editor);
+    }
+
     #[test]
     fn if_editor_mode_keeps_whitespace_short() {
         let input = "def  ";
 
-        let tokens: Vec<Token> = vec![Token::new(TokenKind::Def, None, TokenCategory::Keyword), 
-        Token::new(TokenKind::Whitespace, Some(String::from("2")), TokenCategory::Whitespace), 
-        Token::new(TokenKind::Eof, None, TokenCategory::Eof),];
+        let tokens: Vec<Token> = vec![
+            Token::new(TokenKind::Def, None, TokenCategory::Keyword),
+            Token::new(
+                TokenKind::Whitespace,
+                Some(String::from("2")),
+                TokenCategory::Whitespace,
+            ),
+            Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+        ];
 
         test_single(input, tokens, LexerMode::Editor)
     }
@@ -248,7 +272,11 @@ mod tests {
     "#;
         let tokens: Vec<Token> = vec![
             Token::new(TokenKind::Def, None, TokenCategory::Keyword),
-            Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
+            Token::new(
+                TokenKind::Whitespace,
+                Some(String::from("1")),
+                TokenCategory::Whitespace,
+            ),
             Token::new(
                 TokenKind::Ident,
                 Some(String::from("my_func")),
@@ -265,7 +293,11 @@ mod tests {
                 TokenCategory::Identifier,
             ),
             Token::new(TokenKind::Comma, None, TokenCategory::PunctuationAndGroup),
-            Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
+            Token::new(
+                TokenKind::Whitespace,
+                Some(String::from("1")),
+                TokenCategory::Whitespace,
+            ),
             Token::new(
                 TokenKind::Ident,
                 Some(String::from("b")),
@@ -277,28 +309,48 @@ mod tests {
                 TokenCategory::PunctuationAndGroup,
             ),
             Token::new(TokenKind::Colon, None, TokenCategory::PunctuationAndGroup),
-            Token::new(TokenKind::Whitespace, Some(String::from("2")), TokenCategory::Whitespace),
+            Token::new(
+                TokenKind::Whitespace,
+                Some(String::from("2")),
+                TokenCategory::Whitespace,
+            ),
             Token::new(
                 TokenKind::Indent,
                 Some(String::from("4")),
                 TokenCategory::Whitespace,
             ),
             Token::new(TokenKind::Return, None, TokenCategory::Keyword),
-            Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
+            Token::new(
+                TokenKind::Whitespace,
+                Some(String::from("1")),
+                TokenCategory::Whitespace,
+            ),
             Token::new(
                 TokenKind::Ident,
                 Some(String::from("a")),
                 TokenCategory::Identifier,
             ),
-            Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
+            Token::new(
+                TokenKind::Whitespace,
+                Some(String::from("1")),
+                TokenCategory::Whitespace,
+            ),
             Token::new(TokenKind::Plus, None, TokenCategory::Operators),
             Token::new(
                 TokenKind::Ident,
                 Some(String::from("b")),
                 TokenCategory::Identifier,
             ),
-            Token::new(TokenKind::Whitespace, Some(String::from("3")), TokenCategory::Whitespace),
-            Token::new(TokenKind::Dedent, Some(String::from("4")), TokenCategory::Whitespace),
+            Token::new(
+                TokenKind::Whitespace,
+                Some(String::from("3")),
+                TokenCategory::Whitespace,
+            ),
+            Token::new(
+                TokenKind::Dedent,
+                Some(String::from("4")),
+                TokenCategory::Whitespace,
+            ),
             Token::new(TokenKind::Eof, None, TokenCategory::Eof),
         ];
         test_single(input, tokens, LexerMode::Editor);
