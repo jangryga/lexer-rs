@@ -355,7 +355,6 @@ pub struct Lexer {
     pub current_indent: i32,
     pub character: u32,
     pub mode: LexerMode,
-    pub comment_mode: CommentMode,
 }
 
 impl Lexer {
@@ -369,7 +368,6 @@ impl Lexer {
                     current_indent: 0,
                     input: text.chars().map(|ch| ch as u32).collect(),
                     mode,
-                    comment_mode: CommentMode::Inactive,
                 };
                 // I don't like this - initializing with input exhibits different behavior
                 lex.read_character();
@@ -382,7 +380,6 @@ impl Lexer {
                 current_indent: 0,
                 input: Vec::new(),
                 mode,
-                comment_mode: CommentMode::Inactive,
             },
         }
     }
@@ -403,7 +400,8 @@ impl Lexer {
 
         loop {
             self.read_character();
-            if self.character == end_character && self.input[self.position - 1] != 92 {
+            if (self.character == end_character && self.input[self.position - 1] != 92 /* '\' */) ||
+                self.character == 0 /* eof */ {
                 break;
             }
         }
