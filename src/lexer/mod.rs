@@ -1,6 +1,12 @@
+mod tokens;
+
+pub use tokens::*;
+
 use console_error_panic_hook::set_once;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
+use web_sys::console;
+
 
 static WHITESPACE: [u32; 2] = [32, 160];
 
@@ -10,7 +16,7 @@ macro_rules! console_log {
 
 #[cfg(target_arch = "wasm32")]
 pub fn log(s: &str) {
-    web_sys::console::log_1(&s.into());
+    console::log_1(&s.into());
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -75,219 +81,7 @@ impl Token {
     }
 }
 
-#[wasm_bindgen]
-#[derive(PartialEq, Debug, Serialize, Deserialize)]
-pub enum TokenKind {
-    Indent,
-    Dedent,
 
-    // Comments
-    StringMultiline, // it can be both comment and string so it cannot be ignored
-    CommentSingleline,
-
-    // Standard keywords
-    False,
-    None,
-    True,
-    And,
-    As,
-    Assert,
-    Async,
-    Await,
-    Break,
-    Class,
-    Continue,
-    Def,
-    Del,
-    Elif,
-    Else,
-    Except,
-    Finally,
-    For,
-    From,
-    Global,
-    If,
-    Import,
-    In,
-    Is,
-    Lambda,
-    Local,
-    Nonlocal,
-    Not,
-    Or,
-    Pass,
-    Raise,
-    Return,
-    Try,
-    While,
-    With,
-    Yield,
-
-    // Special methods (commonly used, but not reserved keywords)
-    Init,    // __init__
-    New,     // __new__
-    Delitem, // __delitem__
-    Getitem, // __getitem__
-    Setitem, // __setitem__
-    Str,     // __str__
-    Repr,    // __repr__
-    Len,     // __len__
-    // Special cases
-    Name,        // __name__
-    Doc,         // __doc__
-    Package,     // __package__
-    Loader,      // __loader__
-    Spec,        // __spec__
-    Annotations, // __annotations__
-    Builtins,    // __builtins__
-
-    // Built-in types
-    Int,
-    Float,
-    Complex,
-    List,
-    Tuple,
-    RangeType,
-    String,
-    Set,
-    Dict,
-    FrozenSet,
-    ByteArray,
-    Bytes,
-    MemoryView,
-    Bool,
-
-    // Built-in functions
-    Abs,
-    All,
-    Any,
-    Ascii,
-    Bin,
-    BoolFn,
-    Breakpoint,
-    Bytearray,
-    BytesFn,
-    Callable,
-    Chr,
-    Classmethod,
-    Compile,
-    ComplexFn,
-    Delattr,
-    DictFn,
-    Dir,
-    Divmod,
-    Enumerate,
-    Eval,
-    Exec,
-    Filter,
-    FloatFn,
-    Format,
-    Frozenset,
-    Getattr,
-    Globals,
-    Hasattr,
-    Hash,
-    Help,
-    Hex,
-    Id,
-    Input,
-    IntFn,
-    Isinstance,
-    Issubclass,
-    Iter,
-    LenFn,
-    ListFn,
-    Locals,
-    Map,
-    Max,
-    Memoryview,
-    Min,
-    Next,
-    Object,
-    Oct,
-    Open,
-    Ord,
-    Pow,
-    Print,
-    Property,
-    Range,
-    ReprFn,
-    Reversed,
-    Round,
-    SetFn,
-    Setattr,
-    Slice,
-    Sorted,
-    Staticmethod,
-    StrFn,
-    Sum,
-    Super,
-    TupleFn,
-    Type,
-    Vars,
-    Zip,
-    ImportFn, // __import__
-
-    // Punctuation and grouping
-    LeftParenthesis,  // (
-    RightParenthesis, // )
-    LeftBracket,      // [
-    RightBracket,     // ]
-    LeftBrace,        // {
-    RightBrace,       // }
-    Comma,            // ,
-    Dot,              // .
-    Semicolon,        // ;
-    Colon,            // :
-    Arrow,            // ->
-    Ellipsis,         // ...
-
-    // Operators
-    Plus,             // +
-    Minus,            // -
-    Multiply,         // *
-    Divide,           // /
-    Modulo,           // %
-    Power,            // **
-    FloorDivide,      // //
-    Increment,        // ++
-    Decrement,        // --
-    PlusEqual,        // +=
-    MinusEqual,       // -=
-    MultiplyEqual,    // *=
-    DivideEqual,      // /=
-    ModuloEqual,      // %=
-    PowerEqual,       // **=
-    FloorDivideEqual, // //=
-    AndEqual,         // &=
-    OrEqual,          // |=
-    XorEqual,         // ^=
-    ShiftLeftEqual,   // <<=
-    ShiftRightEqual,  // >>=
-    Assign,           // =
-
-    // Comparison and logical operators
-    Equal,        // ==
-    NotEqual,     // !=
-    Greater,      // >
-    Less,         // <
-    GreaterEqual, // >=
-    LessEqual,    // <=
-    AndCmp,       // &&
-    OrCmp,        // ||
-    NotCmp,       // !
-    BitwiseAnd,   // &
-    BitwiseOr,    // |
-    BitwiseXor,   // ^
-    BitwiseNot,   // ~
-    ShiftLeft,    // <<
-    ShiftRight,   // >>
-
-    Eof,
-    Ident,
-    Newline,
-    Whitespace,
-}
 
 #[wasm_bindgen]
 pub struct LexerWrapper {
@@ -314,7 +108,7 @@ impl LexerWrapper {
 
         if self.lexer.debug_mode {
             let input_string = self.lexer.input.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(", ");
-            console_log!("Input: [{}]", input_string)
+            console_log!("Input: [{}]", input_string);
         }
 
         while self.lexer.read_position <= self.lexer.input.len() + 1 {
