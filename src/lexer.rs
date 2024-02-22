@@ -297,9 +297,10 @@ pub struct LexerWrapper {
 #[wasm_bindgen]
 impl LexerWrapper {
     #[wasm_bindgen(constructor)]
-    pub fn new() -> LexerWrapper {
+    pub fn new(debug_mode: Option<bool>) -> LexerWrapper {
+        let debug_mode = debug_mode.unwrap_or(false);
         LexerWrapper {
-            lexer: Lexer::new(None, LexerMode::Editor),
+            lexer: Lexer::new(None, LexerMode::Editor, debug_mode),
         }
     }
 
@@ -310,6 +311,11 @@ impl LexerWrapper {
         self.lexer.current_indent = 0;
         self.lexer.read_character();
         let mut tokens: Vec<Token> = Vec::new();
+
+        if self.lexer.debug_mode {
+            let input_string = self.lexer.input.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(", ");
+            console_log!("Input: [{}]", input_string)
+        }
 
         while self.lexer.read_position <= self.lexer.input.len() + 1 {
             // this is a hack because tokenize_next_character doesn't return more than one token, hence why newline gets skipped
@@ -355,10 +361,11 @@ pub struct Lexer {
     pub current_indent: i32,
     pub character: u32,
     pub mode: LexerMode,
+    pub debug_mode: bool,
 }
 
 impl Lexer {
-    pub fn new(input: Option<&str>, mode: LexerMode) -> Lexer {
+    pub fn new(input: Option<&str>, mode: LexerMode, debug_mode: bool) -> Lexer {
         match input {
             Some(text) => {
                 let mut lex = Lexer {
@@ -368,6 +375,7 @@ impl Lexer {
                     current_indent: 0,
                     input: text.chars().map(|ch| ch as u32).collect(),
                     mode,
+                    debug_mode
                 };
                 // I don't like this - initializing with input exhibits different behavior
                 lex.read_character();
@@ -380,6 +388,7 @@ impl Lexer {
                 current_indent: 0,
                 input: Vec::new(),
                 mode,
+                debug_mode,
             },
         }
     }
@@ -750,7 +759,7 @@ impl Lexer {
 
     pub fn read_ident(&mut self) -> String {
         let pos = self.position;
-        while let _letter @ 97..=122 /* 'a'..'z' */ | _letter @ 65..=90 /* 'A'..'Z' */ | _letter @ 95 /* '_' */ = self.character {
+        while let _letter @ 97..=122 /* 'a'..'z' */ | _letter @ 65..=90 /* 'A'..'Z' */ | _letter @ 95 /* '_' */ | _letter @ 48..=57 /* '0'..'9' */ = self.character {
             self.read_character();
         }
         let sequence = &self.input[pos..self.position];

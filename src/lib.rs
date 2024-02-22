@@ -14,6 +14,7 @@ mod tests {
             read_position: 0,
             input: vec![97, 97, 97, 32],
             mode: LexerMode::Ast,
+            debug_mode: false
         };
         lexer.read_character();
 
@@ -64,6 +65,27 @@ mod tests {
             ),
         ];
         test_multiple(exps)
+    }
+
+    #[test]
+    fn numbers_in_identity_names() {
+        let tokens = vec![
+            Token::new(TokenKind::Ident, Some(String::from("d1")), TokenCategory::Identifier),
+            Token::new(
+                TokenKind::Whitespace,
+                Some(String::from("1")),
+                TokenCategory::Whitespace,
+            ),
+            Token::new(TokenKind::Ident, Some(String::from("d2")), TokenCategory::Identifier),
+            Token::new(
+                TokenKind::Whitespace,
+                Some(String::from("1")),
+                TokenCategory::Whitespace,
+            ),
+            Token::new(TokenKind::Ident, Some(String::from("d3")), TokenCategory::Identifier),
+        ];
+
+        test_single("d1 d2 d3", tokens, LexerMode::Editor)
     }
 
     #[test]
@@ -356,7 +378,7 @@ mod tests {
     }
 
     fn test_single(input: &str, tokens: Vec<Token>, mode: LexerMode) {
-        let mut lexer = Lexer::new(Some(input), mode);
+        let mut lexer = Lexer::new(Some(input), mode, false);
         lexer.current_indent = 4;
 
         for token in tokens {
@@ -368,7 +390,7 @@ mod tests {
 
     fn test_multiple(exps: Vec<(&str, Vec<Token>)>) {
         for (input, expected) in exps {
-            let mut lexer = Lexer::new(Some(input), LexerMode::Ast);
+            let mut lexer = Lexer::new(Some(input), LexerMode::Ast, false);
             for (i, exp_token) in expected.iter().enumerate() {
                 match lexer.tokenize_next_character() {
                     Ok(token) => assert_eq!(&token, exp_token, "Test failed at token index: {}", i),
