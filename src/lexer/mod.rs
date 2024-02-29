@@ -5,8 +5,6 @@ pub use tokens::*;
 use console_error_panic_hook::set_once;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
-use web_sys::console;
-
 
 static WHITESPACE: [u32; 2] = [32, 160];
 
@@ -16,7 +14,7 @@ macro_rules! console_log {
 
 #[cfg(target_arch = "wasm32")]
 pub fn log(s: &str) {
-    console::log_1(&s.into());
+    web_sys::console::log_1(&s.into());
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -29,7 +27,7 @@ const TS_TOKEN_INTERFACE: &'static str = r#"
 export interface TokenType {
   kind: string; // TokenKind
   value: string | undefined; // `value` is optional because it's an Option<String> in Rust
-  category: string // TokenCategory; 
+  category: string // TokenCategory;
 }
 "#;
 
@@ -76,12 +74,9 @@ impl Token {
     }
     pub fn into_js_value(self) -> JsValue {
         // Convert the Token to a JsValue. This could be a JavaScript object.
-        // Use serde_wasm_bindgen if you need to serialize complex structures.
         serde_wasm_bindgen::to_value(&self).unwrap()
     }
 }
-
-
 
 #[wasm_bindgen]
 pub struct LexerWrapper {
@@ -106,9 +101,9 @@ impl LexerWrapper {
         self.lexer.read_character();
         let mut tokens: Vec<Token> = Vec::new();
 
+        let input_string = self.lexer.input.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(", ");
         if self.lexer.debug_mode {
-            let input_string = self.lexer.input.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(", ");
-            console_log!("Input: [{}]", input_string);
+            console_log!("[DEBUG] Input stream: {}", input_string);
         }
 
         while self.lexer.read_position <= self.lexer.input.len() + 1 {

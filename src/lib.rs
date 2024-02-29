@@ -70,6 +70,7 @@ mod tests {
     #[test]
     fn numbers_in_identity_names() {
         let tokens = vec![
+
             Token::new(TokenKind::Ident, Some(String::from("d1")), TokenCategory::Identifier),
             Token::new(
                 TokenKind::Whitespace,
@@ -125,9 +126,9 @@ mod tests {
 
     #[test]
     fn if_handles_multiline_input() {
-        let input = r#"def my_func(a, b): 
+        let input = r#"def my_func(a, b):
         return a +b
-    
+
     res = my_func(1, 32)
     print(res)
     "#;
@@ -288,8 +289,8 @@ mod tests {
 
     #[test]
     fn if_editor_mode_keeps_whitespace_long() {
-        let input = r#"def my_func(a, b):  
-        return a +b   
+        let input = r#"def my_func(a, b):
+        return a +b
     "#;
         let tokens: Vec<Token> = vec![
             Token::new(TokenKind::Def, None, TokenCategory::Keyword),
