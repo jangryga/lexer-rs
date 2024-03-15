@@ -509,8 +509,8 @@ impl Lexer {
                 return Ok(Token::new(token_type, None, token_category));
             },
             8203 => {
-                // U+200B or Zero Width Space -> used by the editor for initial character so ignerred here
-                // todo: handle in lexer mode
+                // U+200B or Zero Width Space -> used by the editor for initial character so ignored here
+                self.read_character();
                 return self.tokenize_next_character();
             }
             0 => Token::new(TokenKind::Eof, None, TokenCategory::Eof),

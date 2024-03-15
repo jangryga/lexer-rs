@@ -121,7 +121,8 @@ mod tests {
             ),
             Token::new(TokenKind::Colon, None, TokenCategory::PunctuationAndGroup),
         ];
-        test_single("def my_func(a, b):", tokens, LexerMode::Ast);
+
+        test_single("def my_func(a, b)\u{200B}:", tokens, LexerMode::Ast);
     }
 
     #[test]
