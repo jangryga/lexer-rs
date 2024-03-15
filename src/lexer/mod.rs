@@ -508,6 +508,11 @@ impl Lexer {
                 }
                 return Ok(Token::new(token_type, None, token_category));
             },
+            8203 => {
+                // U+200B or Zero Width Space -> used by the editor for initial character so ignerred here
+                // todo: handle in lexer mode
+                return self.tokenize_next_character();
+            }
             0 => Token::new(TokenKind::Eof, None, TokenCategory::Eof),
             char => unreachable!("shouldn't reach this, tried to match {}", char),
         };
@@ -577,6 +582,13 @@ impl Lexer {
             return None;
         }
         Some(self.input[self.read_position])
+    }
+
+    pub fn double_peek_u32(&mut self) -> Option<Vec<u32>> {
+        if self.read_position + 1 >= self.input.len() {
+            return None;
+        }
+        return Some(self.input[self.read_position..self.read_position + 1].to_vec())
     }
 
     pub fn double_peek(&mut self) -> Option<String> {
