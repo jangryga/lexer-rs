@@ -106,7 +106,18 @@ impl LexerWrapper {
             console_log!("[DEBUG] Input stream: {}", input_string);
         }
 
-        if self.lexer.input[0] == 10 {
+        // if the input starts on a whitespace, the lexer incorrectly inserts extra whitespace tokens
+        //
+        // Understanding whitespace lines:
+        // usually whitespace line in an editor looks like:
+        //    <div><br /></div>
+        // this would be [10]
+        // However, this would be a single line still with caret at the end.
+        // For the cursor to be on the next line,
+        // there needs to be another whitespace - it ends up being [10, 10]
+        //
+        // !this whole thing is implemented in a very hairy way by trial and error
+        if self.lexer.input.len() > 0 && self.lexer.input[0] == 10 {
             self.lexer.read_character();
         }
 
