@@ -106,6 +106,10 @@ impl LexerWrapper {
             console_log!("[DEBUG] Input stream: {}", input_string);
         }
 
+        if self.lexer.input[0] == 10 {
+            self.lexer.read_character();
+        }
+
         while self.lexer.read_position <= self.lexer.input.len() + 1 {
             // this is a hack because tokenize_next_character doesn't return more than one token, hence why newline gets skipped
             if let Ok(token) = self.lexer.tokenize_next_character() {
