@@ -66,11 +66,7 @@ pub struct Token {
 #[wasm_bindgen]
 impl Token {
     pub fn new(kind: TokenKind, value: Option<String>, category: TokenCategory) -> Token {
-        Token {
-            kind,
-            value,
-            category,
-        }
+        Token { kind, value, category }
     }
     pub fn into_js_value(self) -> JsValue {
         // Convert the Token to a JsValue. This could be a JavaScript object.
@@ -125,11 +121,7 @@ impl LexerWrapper {
             // this is a hack because tokenize_next_character doesn't return more than one token, hence why newline gets skipped
             if let Ok(token) = self.lexer.tokenize_next_character() {
                 if token.kind == TokenKind::Indent || token.kind == TokenKind::Dedent {
-                    tokens.push(Token::new(
-                        TokenKind::Newline,
-                        None,
-                        TokenCategory::Whitespace,
-                    ))
+                    tokens.push(Token::new(TokenKind::Newline, None, TokenCategory::Whitespace))
                 }
                 tokens.push(token);
             }
@@ -179,7 +171,7 @@ impl Lexer {
                     current_indent: 0,
                     input: text.chars().map(|ch| ch as u32).collect(),
                     mode,
-                    debug_mode
+                    debug_mode,
                 };
                 // I don't like this - initializing with input exhibits different behavior
                 lex.read_character();
@@ -205,25 +197,20 @@ impl Lexer {
         todo!()
     }
 
-    pub fn read_string_literal(
-        &mut self,
-        end_character: u32, /* ' or "" => 34 or 39 */
-    ) -> String {
+    pub fn read_string_literal(&mut self, end_character: u32 /* ' or "" => 34 or 39 */) -> String {
         let pos: usize = self.position;
 
         loop {
             self.read_character();
-            if (self.character == end_character && self.input[self.position - 1] != 92 /* '\' */) ||
-                self.character == 0 /* eof */ {
+            if (self.character == end_character && self.input[self.position - 1] != 92/* '\' */) || self.character == 0
+            /* eof */
+            {
                 break;
             }
         }
 
         let sequence = &self.input[pos..self.position];
-        sequence
-            .iter()
-            .filter_map(|&code_point| std::char::from_u32(code_point))
-            .collect()
+        sequence.iter().filter_map(|&code_point| std::char::from_u32(code_point)).collect()
     }
 
     pub fn read_singleline_comment(&mut self) -> String {
@@ -236,10 +223,7 @@ impl Lexer {
         }
 
         let sequence = &self.input[pos..self.position];
-        sequence
-            .iter()
-            .filter_map(|&code_point| std::char::from_u32(code_point))
-            .collect()
+        sequence.iter().filter_map(|&code_point| std::char::from_u32(code_point)).collect()
     }
 
     pub fn tokenize_next_character(&mut self) -> Result<Token, ()> {
@@ -488,8 +472,9 @@ impl Lexer {
                     "elif" => (TokenKind::Elif, TokenCategory::Keyword),
                     "for" => (TokenKind::For, TokenCategory::Keyword),
                     "while" => (TokenKind::While, TokenCategory::Keyword),
-                    "False" => (TokenKind::False, TokenCategory::Keyword),
-                    "True" => (TokenKind::True, TokenCategory::Keyword),
+                    // these are built in types
+                    "False" => (TokenKind::False, TokenCategory::BuiltInType),
+                    "True" => (TokenKind::True, TokenCategory::BuiltInType),
                     "continue" => (TokenKind::Continue, TokenCategory::Keyword),
                     "break" => (TokenKind::Break, TokenCategory::Keyword),
                     "del" => (TokenKind::Del, TokenCategory::Keyword),
@@ -545,9 +530,7 @@ impl Lexer {
     pub fn indent_diff(&mut self) -> i32 {
         let mut indent_length = 0;
         let initial = self.current_indent;
-        while self.read_position < self.input.len()
-            && WHITESPACE.contains(&self.input[self.read_position])
-        {
+        while self.read_position < self.input.len() && WHITESPACE.contains(&self.input[self.read_position]) {
             self.read_character();
             indent_length += 1;
         }
@@ -572,10 +555,7 @@ impl Lexer {
             self.read_character();
         }
         let sequence = &self.input[pos..self.position];
-        sequence
-            .iter()
-            .filter_map(|&code_point| std::char::from_u32(code_point))
-            .collect()
+        sequence.iter().filter_map(|&code_point| std::char::from_u32(code_point)).collect()
     }
 
     pub fn read_num(&mut self) -> String {
@@ -584,16 +564,11 @@ impl Lexer {
             self.read_character();
         }
         let sequence = &self.input[pos..self.position];
-        sequence
-            .iter()
-            .filter_map(|&code_point| std::char::from_u32(code_point))
-            .collect()
+        sequence.iter().filter_map(|&code_point| std::char::from_u32(code_point)).collect()
     }
 
     pub fn peek(&mut self) -> Option<u32> {
-        if self.read_position >= self.input.len()
-            || WHITESPACE.contains(&self.input[self.read_position])
-        {
+        if self.read_position >= self.input.len() || WHITESPACE.contains(&self.input[self.read_position]) {
             return None;
         }
         Some(self.input[self.read_position])
@@ -603,7 +578,7 @@ impl Lexer {
         if self.read_position + 1 >= self.input.len() {
             return None;
         }
-        return Some(self.input[self.read_position..self.read_position + 1].to_vec())
+        return Some(self.input[self.read_position..self.read_position + 1].to_vec());
     }
 
     pub fn double_peek(&mut self) -> Option<String> {
@@ -612,11 +587,6 @@ impl Lexer {
         }
 
         let sequence = &self.input[self.read_position..self.position + 1];
-        Some(
-            sequence
-                .iter()
-                .filter_map(|&code_point| std::char::from_u32(code_point))
-                .collect(),
-        )
+        Some(sequence.iter().filter_map(|&code_point| std::char::from_u32(code_point)).collect())
     }
 }

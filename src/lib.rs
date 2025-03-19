@@ -14,16 +14,12 @@ mod tests {
             read_position: 0,
             input: vec![97, 97, 97, 32],
             mode: LexerMode::Ast,
-            debug_mode: false
+            debug_mode: false,
         };
         lexer.read_character();
 
         let output = vec![
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("aaa")),
-                TokenCategory::Identifier,
-            ),
+            Token::new(TokenKind::Ident, Some(String::from("aaa")), TokenCategory::Identifier),
             Token::new(TokenKind::Eof, None, TokenCategory::Eof),
         ];
         let mut tokens: Vec<Token> = Vec::new();
@@ -47,14 +43,8 @@ mod tests {
                     TokenCategory::Identifier,
                 )],
             ),
-            (
-                "def",
-                vec![Token::new(TokenKind::Def, None, TokenCategory::Keyword)],
-            ),
-            (
-                "**",
-                vec![Token::new(TokenKind::Power, None, TokenCategory::Operators)],
-            ),
+            ("def", vec![Token::new(TokenKind::Def, None, TokenCategory::Keyword)]),
+            ("**", vec![Token::new(TokenKind::Power, None, TokenCategory::Operators)]),
             (
                 "my_func",
                 vec![Token::new(
@@ -70,19 +60,10 @@ mod tests {
     #[test]
     fn numbers_in_identity_names() {
         let tokens = vec![
-
             Token::new(TokenKind::Ident, Some(String::from("d1")), TokenCategory::Identifier),
-            Token::new(
-                TokenKind::Whitespace,
-                Some(String::from("1")),
-                TokenCategory::Whitespace,
-            ),
+            Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
             Token::new(TokenKind::Ident, Some(String::from("d2")), TokenCategory::Identifier),
-            Token::new(
-                TokenKind::Whitespace,
-                Some(String::from("1")),
-                TokenCategory::Whitespace,
-            ),
+            Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
             Token::new(TokenKind::Ident, Some(String::from("d3")), TokenCategory::Identifier),
         ];
 
@@ -93,32 +74,12 @@ mod tests {
     fn if_handles_one_line_expressions() {
         let tokens = vec![
             Token::new(TokenKind::Def, None, TokenCategory::Keyword),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("my_func")),
-                TokenCategory::Identifier,
-            ),
-            Token::new(
-                TokenKind::LeftParenthesis,
-                None,
-                TokenCategory::PunctuationAndGroup,
-            ),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("a")),
-                TokenCategory::Identifier,
-            ),
+            Token::new(TokenKind::Ident, Some(String::from("my_func")), TokenCategory::Identifier),
+            Token::new(TokenKind::LeftParenthesis, None, TokenCategory::PunctuationAndGroup),
+            Token::new(TokenKind::Ident, Some(String::from("a")), TokenCategory::Identifier),
             Token::new(TokenKind::Comma, None, TokenCategory::PunctuationAndGroup),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("b")),
-                TokenCategory::Identifier,
-            ),
-            Token::new(
-                TokenKind::RightParenthesis,
-                None,
-                TokenCategory::PunctuationAndGroup,
-            ),
+            Token::new(TokenKind::Ident, Some(String::from("b")), TokenCategory::Identifier),
+            Token::new(TokenKind::RightParenthesis, None, TokenCategory::PunctuationAndGroup),
             Token::new(TokenKind::Colon, None, TokenCategory::PunctuationAndGroup),
         ];
 
@@ -136,105 +97,33 @@ mod tests {
 
         let tokens = vec![
             Token::new(TokenKind::Def, None, TokenCategory::Keyword),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("my_func")),
-                TokenCategory::Identifier,
-            ),
-            Token::new(
-                TokenKind::LeftParenthesis,
-                None,
-                TokenCategory::PunctuationAndGroup,
-            ),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("a")),
-                TokenCategory::Identifier,
-            ),
+            Token::new(TokenKind::Ident, Some(String::from("my_func")), TokenCategory::Identifier),
+            Token::new(TokenKind::LeftParenthesis, None, TokenCategory::PunctuationAndGroup),
+            Token::new(TokenKind::Ident, Some(String::from("a")), TokenCategory::Identifier),
             Token::new(TokenKind::Comma, None, TokenCategory::PunctuationAndGroup),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("b")),
-                TokenCategory::Identifier,
-            ),
-            Token::new(
-                TokenKind::RightParenthesis,
-                None,
-                TokenCategory::PunctuationAndGroup,
-            ),
+            Token::new(TokenKind::Ident, Some(String::from("b")), TokenCategory::Identifier),
+            Token::new(TokenKind::RightParenthesis, None, TokenCategory::PunctuationAndGroup),
             Token::new(TokenKind::Colon, None, TokenCategory::PunctuationAndGroup),
-            Token::new(
-                TokenKind::Indent,
-                Some(String::from("4")),
-                TokenCategory::Whitespace,
-            ),
+            Token::new(TokenKind::Indent, Some(String::from("4")), TokenCategory::Whitespace),
             Token::new(TokenKind::Return, None, TokenCategory::Keyword),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("a")),
-                TokenCategory::Identifier,
-            ),
+            Token::new(TokenKind::Ident, Some(String::from("a")), TokenCategory::Identifier),
             Token::new(TokenKind::Plus, None, TokenCategory::Operators),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("b")),
-                TokenCategory::Identifier,
-            ),
-            Token::new(
-                TokenKind::Dedent,
-                Some(String::from("4")),
-                TokenCategory::Whitespace,
-            ),
+            Token::new(TokenKind::Ident, Some(String::from("b")), TokenCategory::Identifier),
+            Token::new(TokenKind::Dedent, Some(String::from("4")), TokenCategory::Whitespace),
             Token::new(TokenKind::Newline, None, TokenCategory::Whitespace),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("res")),
-                TokenCategory::Identifier,
-            ),
+            Token::new(TokenKind::Ident, Some(String::from("res")), TokenCategory::Identifier),
             Token::new(TokenKind::Assign, None, TokenCategory::Operators),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("my_func")),
-                TokenCategory::Identifier,
-            ),
-            Token::new(
-                TokenKind::LeftParenthesis,
-                None,
-                TokenCategory::PunctuationAndGroup,
-            ),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("1")),
-                TokenCategory::Literal,
-            ),
+            Token::new(TokenKind::Ident, Some(String::from("my_func")), TokenCategory::Identifier),
+            Token::new(TokenKind::LeftParenthesis, None, TokenCategory::PunctuationAndGroup),
+            Token::new(TokenKind::Ident, Some(String::from("1")), TokenCategory::Literal),
             Token::new(TokenKind::Comma, None, TokenCategory::PunctuationAndGroup),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("32")),
-                TokenCategory::Literal,
-            ),
-            Token::new(
-                TokenKind::RightParenthesis,
-                None,
-                TokenCategory::PunctuationAndGroup,
-            ),
+            Token::new(TokenKind::Ident, Some(String::from("32")), TokenCategory::Literal),
+            Token::new(TokenKind::RightParenthesis, None, TokenCategory::PunctuationAndGroup),
             Token::new(TokenKind::Newline, None, TokenCategory::Whitespace),
             Token::new(TokenKind::Print, None, TokenCategory::BuiltInFn),
-            Token::new(
-                TokenKind::LeftParenthesis,
-                None,
-                TokenCategory::PunctuationAndGroup,
-            ),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("res")),
-                TokenCategory::Identifier,
-            ),
-            Token::new(
-                TokenKind::RightParenthesis,
-                None,
-                TokenCategory::PunctuationAndGroup,
-            ),
+            Token::new(TokenKind::LeftParenthesis, None, TokenCategory::PunctuationAndGroup),
+            Token::new(TokenKind::Ident, Some(String::from("res")), TokenCategory::Identifier),
+            Token::new(TokenKind::RightParenthesis, None, TokenCategory::PunctuationAndGroup),
             Token::new(TokenKind::Newline, None, TokenCategory::Whitespace),
             Token::new(TokenKind::Eof, None, TokenCategory::Eof),
         ];
@@ -262,11 +151,7 @@ mod tests {
     #[test]
     fn if_handles_string_1() {
         let input = r#""abc""#;
-        let tokens: Vec<Token> = vec![Token::new(
-            TokenKind::String,
-            Some(String::from("abc")),
-            TokenCategory::Literal,
-        )];
+        let tokens: Vec<Token> = vec![Token::new(TokenKind::String, Some(String::from("abc")), TokenCategory::Literal)];
 
         test_single(input, tokens, LexerMode::Editor);
     }
@@ -277,11 +162,7 @@ mod tests {
 
         let tokens: Vec<Token> = vec![
             Token::new(TokenKind::Def, None, TokenCategory::Keyword),
-            Token::new(
-                TokenKind::Whitespace,
-                Some(String::from("2")),
-                TokenCategory::Whitespace,
-            ),
+            Token::new(TokenKind::Whitespace, Some(String::from("2")), TokenCategory::Whitespace),
             Token::new(TokenKind::Eof, None, TokenCategory::Eof),
         ];
 
@@ -295,85 +176,25 @@ mod tests {
     "#;
         let tokens: Vec<Token> = vec![
             Token::new(TokenKind::Def, None, TokenCategory::Keyword),
-            Token::new(
-                TokenKind::Whitespace,
-                Some(String::from("1")),
-                TokenCategory::Whitespace,
-            ),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("my_func")),
-                TokenCategory::Identifier,
-            ),
-            Token::new(
-                TokenKind::LeftParenthesis,
-                None,
-                TokenCategory::PunctuationAndGroup,
-            ),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("a")),
-                TokenCategory::Identifier,
-            ),
+            Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
+            Token::new(TokenKind::Ident, Some(String::from("my_func")), TokenCategory::Identifier),
+            Token::new(TokenKind::LeftParenthesis, None, TokenCategory::PunctuationAndGroup),
+            Token::new(TokenKind::Ident, Some(String::from("a")), TokenCategory::Identifier),
             Token::new(TokenKind::Comma, None, TokenCategory::PunctuationAndGroup),
-            Token::new(
-                TokenKind::Whitespace,
-                Some(String::from("1")),
-                TokenCategory::Whitespace,
-            ),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("b")),
-                TokenCategory::Identifier,
-            ),
-            Token::new(
-                TokenKind::RightParenthesis,
-                None,
-                TokenCategory::PunctuationAndGroup,
-            ),
+            Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
+            Token::new(TokenKind::Ident, Some(String::from("b")), TokenCategory::Identifier),
+            Token::new(TokenKind::RightParenthesis, None, TokenCategory::PunctuationAndGroup),
             Token::new(TokenKind::Colon, None, TokenCategory::PunctuationAndGroup),
-            Token::new(
-                TokenKind::Whitespace,
-                Some(String::from("2")),
-                TokenCategory::Whitespace,
-            ),
-            Token::new(
-                TokenKind::Indent,
-                Some(String::from("4")),
-                TokenCategory::Whitespace,
-            ),
+            Token::new(TokenKind::Whitespace, Some(String::from("2")), TokenCategory::Whitespace),
+            Token::new(TokenKind::Indent, Some(String::from("4")), TokenCategory::Whitespace),
             Token::new(TokenKind::Return, None, TokenCategory::Keyword),
-            Token::new(
-                TokenKind::Whitespace,
-                Some(String::from("1")),
-                TokenCategory::Whitespace,
-            ),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("a")),
-                TokenCategory::Identifier,
-            ),
-            Token::new(
-                TokenKind::Whitespace,
-                Some(String::from("1")),
-                TokenCategory::Whitespace,
-            ),
+            Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
+            Token::new(TokenKind::Ident, Some(String::from("a")), TokenCategory::Identifier),
+            Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
             Token::new(TokenKind::Plus, None, TokenCategory::Operators),
-            Token::new(
-                TokenKind::Ident,
-                Some(String::from("b")),
-                TokenCategory::Identifier,
-            ),
-            Token::new(
-                TokenKind::Whitespace,
-                Some(String::from("3")),
-                TokenCategory::Whitespace,
-            ),
-            Token::new(
-                TokenKind::Dedent,
-                Some(String::from("4")),
-                TokenCategory::Whitespace,
-            ),
+            Token::new(TokenKind::Ident, Some(String::from("b")), TokenCategory::Identifier),
+            Token::new(TokenKind::Whitespace, Some(String::from("3")), TokenCategory::Whitespace),
+            Token::new(TokenKind::Dedent, Some(String::from("4")), TokenCategory::Whitespace),
             Token::new(TokenKind::Eof, None, TokenCategory::Eof),
         ];
         test_single(input, tokens, LexerMode::Editor);
@@ -385,7 +206,7 @@ mod tests {
 
         for token in tokens {
             let current = lexer.tokenize_next_character();
-            println!("[INFO] {:?} {:?}", token, current);
+            println!("Expct: {:?}\n Actual: {:?}", token, current);
             assert!(token == current.unwrap());
         }
     }

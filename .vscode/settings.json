@@ -1,3 +1,8 @@
 {
-    "cSpell.words": ["bindgen"]
+  "cSpell.words": ["bindgen"],
+  "editor.formatOnSave": true,
+  "editor.rulers": [140],
+  "editor.wordWrapColumn": 140,
+  "prettier.printWidth": 140,
+  "rust-analyzer.rustfmt.extraArgs": ["--config", "max_width=140"]
 }
