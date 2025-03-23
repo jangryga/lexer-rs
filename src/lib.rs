@@ -36,25 +36,50 @@ mod tests {
     fn if_handles_single_tokens() {
         let exps = vec![
             (
-                "variable_name",
-                vec![Token::new(
-                    TokenKind::Ident,
-                    Some(String::from("variable_name")),
-                    TokenCategory::Identifier,
-                )],
+                "101",
+                vec![
+                    Token::new(TokenKind::Ident, Some(String::from("101")), TokenCategory::Literal),
+                    Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+                ],
             ),
-            ("def", vec![Token::new(TokenKind::Def, None, TokenCategory::Keyword)]),
-            ("**", vec![Token::new(TokenKind::Power, None, TokenCategory::Operators)]),
+            (
+                "((",
+                vec![
+                    Token::new(TokenKind::LeftParenthesis, None, TokenCategory::PunctuationAndGroup),
+                    Token::new(TokenKind::LeftParenthesis, None, TokenCategory::PunctuationAndGroup),
+                    Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+                ],
+            ),
+            (
+                "variable_name",
+                vec![
+                    Token::new(TokenKind::Ident, Some(String::from("variable_name")), TokenCategory::Identifier),
+                    Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+                ],
+            ),
+            (
+                "def",
+                vec![
+                    Token::new(TokenKind::Def, None, TokenCategory::Keyword),
+                    Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+                ],
+            ),
+            (
+                "**",
+                vec![
+                    Token::new(TokenKind::Power, None, TokenCategory::Operators),
+                    Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+                ],
+            ),
             (
                 "my_func",
-                vec![Token::new(
-                    TokenKind::Ident,
-                    Some(String::from("my_func")),
-                    TokenCategory::Identifier,
-                )],
+                vec![
+                    Token::new(TokenKind::Ident, Some(String::from("my_func")), TokenCategory::Identifier),
+                    Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+                ],
             ),
         ];
-        test_multiple(exps, LexerMode::Ast)
+        test_multiple(exps, LexerMode::Editor)
     }
 
     #[test]
@@ -65,6 +90,7 @@ mod tests {
             Token::new(TokenKind::Ident, Some(String::from("d2")), TokenCategory::Identifier),
             Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
             Token::new(TokenKind::Ident, Some(String::from("d3")), TokenCategory::Identifier),
+            Token::new(TokenKind::Eof, None, TokenCategory::Eof),
         ];
 
         test_single("d1 d2 d3", tokens, LexerMode::Editor)
@@ -81,6 +107,7 @@ mod tests {
             Token::new(TokenKind::Ident, Some(String::from("b")), TokenCategory::Identifier),
             Token::new(TokenKind::RightParenthesis, None, TokenCategory::PunctuationAndGroup),
             Token::new(TokenKind::Colon, None, TokenCategory::PunctuationAndGroup),
+            Token::new(TokenKind::Eof, None, TokenCategory::Eof),
         ];
 
         test_single("def my_func(a, b)\u{200B}:", tokens, LexerMode::Ast);
@@ -135,7 +162,7 @@ print(res)
     #[test]
     fn if_handles_singleline_comments() {
         let input = r#"# this is my comment
-    "#;
+"#;
         let tokens: Vec<Token> = vec![
             Token::new(
                 TokenKind::CommentSingleline,
@@ -145,14 +172,6 @@ print(res)
             Token::new(TokenKind::Newline, None, TokenCategory::Whitespace),
             Token::new(TokenKind::Eof, None, TokenCategory::Eof),
         ];
-
-        test_single(input, tokens, LexerMode::Editor);
-    }
-
-    #[test]
-    fn if_handles_string_1() {
-        let input = r#""abc""#;
-        let tokens: Vec<Token> = vec![Token::new(TokenKind::String, Some(String::from("abc")), TokenCategory::Literal)];
 
         test_single(input, tokens, LexerMode::Editor);
     }
@@ -200,6 +219,41 @@ print(res)
             Token::new(TokenKind::Eof, None, TokenCategory::Eof),
         ];
         test_single(input, tokens, LexerMode::Editor);
+    }
+
+    #[test]
+    fn if_handles_strings() {
+        let exps = vec![
+            (
+                r#"'''abc'''"#,
+                vec![
+                    Token::new(TokenKind::StringMultiline, Some(String::from("'''abc'''")), TokenCategory::Literal),
+                    Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+                ],
+            ),
+            (
+                r#""abc""#,
+                vec![
+                    Token::new(TokenKind::String, Some(String::from("\"abc\"")), TokenCategory::Literal),
+                    Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+                ],
+            ),
+            (
+                r#"'abc'"#,
+                vec![
+                    Token::new(TokenKind::String, Some(String::from("\'abc\'")), TokenCategory::Literal),
+                    Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+                ],
+            ),
+            (
+                r#""a'bc""#,
+                vec![
+                    Token::new(TokenKind::String, Some(String::from("\"a'bc\"")), TokenCategory::Literal),
+                    Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+                ],
+            ),
+        ];
+        test_multiple(exps, LexerMode::Ast)
     }
 
     fn test_single(input: &str, tokens_expected: Vec<Token>, mode: LexerMode) {

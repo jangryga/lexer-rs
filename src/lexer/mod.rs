@@ -157,12 +157,32 @@ impl Lexer {
         todo!()
     }
 
-    pub fn read_multiline_string(&mut self) -> String {
-        todo!()
+    pub fn read_multiline_string(&mut self, start_idx: usize, end_character: u32 /* ' or "" => 34 or 39 */) -> String {
+        let end_sequence = if end_character == 34 {
+            Some(String::from("\"\""))
+        } else {
+            Some(String::from("''"))
+        };
+
+        loop {
+            self.read_character();
+            if self.character == 0 {
+                break;
+            } else if self.character == end_character && self.input[self.position - 1] != 92 && self.double_peek() == end_sequence {
+                self.read_character();
+                self.read_character();
+                break;
+            }
+        }
+
+        let end_index = if self.character != 0 { self.position } else { self.position - 1 };
+
+        let sequence = &self.input[start_idx..=end_index];
+        sequence.iter().filter_map(|&code_point| std::char::from_u32(code_point)).collect()
     }
 
     pub fn read_string_literal(&mut self, end_character: u32 /* ' or "" => 34 or 39 */) -> String {
-        let pos: usize = self.position;
+        let pos = self.position;
 
         loop {
             self.read_character();
@@ -173,20 +193,23 @@ impl Lexer {
             }
         }
 
-        let sequence = &self.input[pos..self.position];
+        // let end_index = if self.character != 0 { self.position } else { self.position - 1 };
+
+        // let sequence = &self.input[pos..=end_index];
+        let sequence = &self.input[pos..=self.position];
         sequence.iter().filter_map(|&code_point| std::char::from_u32(code_point)).collect()
     }
 
     pub fn read_singleline_comment(&mut self) -> String {
         let pos: usize = self.position;
 
-        while self.character != 10
+        while self.peek() != Some(10)
         /* '\n' */
         {
             self.read_character();
         }
 
-        let sequence = &self.input[pos..self.position];
+        let sequence = &self.input[pos..=self.position];
         sequence.iter().filter_map(|&code_point| std::char::from_u32(code_point)).collect()
     }
 
@@ -206,9 +229,11 @@ impl Lexer {
             },
             34 /* '"' */ => {
                 if self.double_peek() == Some(String::from("\"\"")) {
+                    let start_idx = self.position;
                     self.read_character();
                     self.read_character();
-                    let value = self.read_multiline_string();
+                    let value = self.read_multiline_string(start_idx, 34);
+                    self.read_character();
                     return Ok(Token::new(
                         TokenKind::StringMultiline,
                         Some(value),
@@ -228,10 +253,14 @@ impl Lexer {
             },
             39 /* ''' */ => {
                 // it could be start of a string
-                if self.double_peek() == Some(String::from("''")) {
+                let x = self.double_peek();
+                println!("{:?}", &x);
+                if x == Some(String::from("''")) {
+                    let start_idx = self.position;
                     self.read_character();
                     self.read_character();
-                    let value = self.read_multiline_string();
+                    let value = self.read_multiline_string(start_idx ,39);
+                    self.read_character();
                     return Ok(Token::new(
                         TokenKind::StringMultiline,
                         Some(value),
@@ -408,7 +437,7 @@ impl Lexer {
             },
             48..=57 /* '0'..'9' */  => {
                 // Start of a number literal
-                let mut number_str = self.read_num(); // You need to define read_number method
+                let mut number_str = self.read_num(); 
                 if let Some(next_char) = self.peek() {
                     // Check for a floating-point literal
                     if next_char == 46 /* '.' */ {
@@ -542,7 +571,7 @@ impl Lexer {
         if self.read_position + 1 >= self.input.len() {
             return None;
         }
-        return Some(self.input[self.read_position..self.read_position + 1].to_vec());
+        return Some(self.input[self.read_position..=self.read_position + 1].to_vec());
     }
 
     pub fn double_peek(&mut self) -> Option<String> {
@@ -550,7 +579,7 @@ impl Lexer {
             return None;
         }
 
-        let sequence = &self.input[self.read_position..self.position + 1];
+        let sequence = &self.input[self.read_position..=self.read_position + 1];
         Some(sequence.iter().filter_map(|&code_point| std::char::from_u32(code_point)).collect())
     }
 
