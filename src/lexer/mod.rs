@@ -90,48 +90,12 @@ impl LexerWrapper {
     }
 
     pub fn tokenize(&mut self, input: &str) -> Result<JsValue, JsValue> {
-        self.lexer.input = input.chars().map(|ch| ch as u32).collect();
-        self.lexer.position = 0;
-        self.lexer.read_position = 0;
-        self.lexer.current_indent = 0;
-        self.lexer.read_character();
-        let mut tokens: Vec<Token> = Vec::new();
-
-        let input_string = self.lexer.input.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(", ");
-        if self.lexer.debug_mode {
-            console_log!("[DEBUG] Input stream: {}", input_string);
-        }
-
-        // if the input starts on a whitespace, the lexer incorrectly inserts extra whitespace tokens
-        //
-        // Understanding whitespace lines:
-        // usually whitespace line in an editor looks like:
-        //    <div><br /></div>
-        // this would be [10]
-        // However, this would be a single line still with caret at the end.
-        // For the cursor to be on the next line,
-        // there needs to be another whitespace - it ends up being [10, 10]
-        //
-        // !this whole thing is implemented in a very hairy way by trial and error
-        if self.lexer.input.len() > 0 && self.lexer.input[0] == 10 {
-            self.lexer.read_character();
-        }
-
-        while self.lexer.read_position <= self.lexer.input.len() + 1 {
-            // this is a hack because tokenize_next_character doesn't return more than one token, hence why newline gets skipped
-            if let Ok(token) = self.lexer.tokenize_next_character() {
-                if token.kind == TokenKind::Indent || token.kind == TokenKind::Dedent {
-                    tokens.push(Token::new(TokenKind::Newline, None, TokenCategory::Whitespace))
-                }
-                tokens.push(token);
-            }
-        }
-
+        let tokens = self.lexer.tokenize(input);
         serde_wasm_bindgen::to_value(&tokens).map_err(|e| JsValue::from_str(&e.to_string()))
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq)]
+#[derive(Serialize, Deserialize, PartialEq, Clone)]
 pub enum LexerMode {
     Ast,
     Editor,
@@ -588,5 +552,46 @@ impl Lexer {
 
         let sequence = &self.input[self.read_position..self.position + 1];
         Some(sequence.iter().filter_map(|&code_point| std::char::from_u32(code_point)).collect())
+    }
+
+    /// if the input starts on a whitespace, the lexer incorrectly inserts extra whitespace tokens
+    ///
+    /// Understanding whitespace lines:
+    /// usually whitespace line in an editor looks like:
+    ///    <div><br /></div>
+    /// this would be [10]
+    /// However, this would be a single line still with caret at the end.
+    /// For the cursor to be on the next line,
+    /// there needs to be another whitespace - it ends up being [10, 10]
+    ///
+    /// !this whole thing is implemented in a very hairy way by trial and error
+    pub fn tokenize(&mut self, input: &str) -> Vec<Token> {
+        self.input = input.chars().map(|ch| ch as u32).collect();
+        self.position = 0;
+        self.read_position = 0;
+        self.current_indent = 0;
+        self.read_character();
+        let mut tokens: Vec<Token> = Vec::new();
+
+        if self.debug_mode {
+            let input_string = self.input.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(", ");
+            console_log!("[DEBUG] Input stream: {}", input_string);
+        }
+
+        if self.input.len() > 0 && self.input[0] == 10 {
+            self.read_character();
+        }
+
+        while self.read_position <= self.input.len() + 1 {
+            // this is a hack because tokenize_next_character doesn't return more than one token, hence why newline gets skipped
+            if let Ok(token) = self.tokenize_next_character() {
+                if token.kind == TokenKind::Indent || token.kind == TokenKind::Dedent {
+                    tokens.push(Token::new(TokenKind::Newline, None, TokenCategory::Whitespace))
+                }
+                tokens.push(token);
+            }
+        }
+
+        return tokens;
     }
 }

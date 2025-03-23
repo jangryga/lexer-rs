@@ -54,7 +54,7 @@ mod tests {
                 )],
             ),
         ];
-        test_multiple(exps)
+        test_multiple(exps, LexerMode::Ast)
     }
 
     #[test]
@@ -89,11 +89,11 @@ mod tests {
     #[test]
     fn if_handles_multiline_input() {
         let input = r#"def my_func(a, b):
-        return a +b
+    return a +b
 
-    res = my_func(1, 32)
-    print(res)
-    "#;
+res = my_func(1, 32)
+print(res)
+"#;
 
         let tokens = vec![
             Token::new(TokenKind::Def, None, TokenCategory::Keyword),
@@ -104,13 +104,14 @@ mod tests {
             Token::new(TokenKind::Ident, Some(String::from("b")), TokenCategory::Identifier),
             Token::new(TokenKind::RightParenthesis, None, TokenCategory::PunctuationAndGroup),
             Token::new(TokenKind::Colon, None, TokenCategory::PunctuationAndGroup),
+            Token::new(TokenKind::Newline, None, TokenCategory::Whitespace),
             Token::new(TokenKind::Indent, Some(String::from("4")), TokenCategory::Whitespace),
             Token::new(TokenKind::Return, None, TokenCategory::Keyword),
             Token::new(TokenKind::Ident, Some(String::from("a")), TokenCategory::Identifier),
             Token::new(TokenKind::Plus, None, TokenCategory::Operators),
             Token::new(TokenKind::Ident, Some(String::from("b")), TokenCategory::Identifier),
-            Token::new(TokenKind::Dedent, Some(String::from("4")), TokenCategory::Whitespace),
             Token::new(TokenKind::Newline, None, TokenCategory::Whitespace),
+            Token::new(TokenKind::Dedent, Some(String::from("4")), TokenCategory::Whitespace),
             Token::new(TokenKind::Ident, Some(String::from("res")), TokenCategory::Identifier),
             Token::new(TokenKind::Assign, None, TokenCategory::Operators),
             Token::new(TokenKind::Ident, Some(String::from("my_func")), TokenCategory::Identifier),
@@ -172,8 +173,8 @@ mod tests {
     #[test]
     fn if_editor_mode_keeps_whitespace_long() {
         let input = r#"def my_func(a, b):
-        return a +b
-    "#;
+    return a +b   
+"#;
         let tokens: Vec<Token> = vec![
             Token::new(TokenKind::Def, None, TokenCategory::Keyword),
             Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
@@ -185,7 +186,7 @@ mod tests {
             Token::new(TokenKind::Ident, Some(String::from("b")), TokenCategory::Identifier),
             Token::new(TokenKind::RightParenthesis, None, TokenCategory::PunctuationAndGroup),
             Token::new(TokenKind::Colon, None, TokenCategory::PunctuationAndGroup),
-            Token::new(TokenKind::Whitespace, Some(String::from("2")), TokenCategory::Whitespace),
+            Token::new(TokenKind::Newline, None, TokenCategory::Whitespace),
             Token::new(TokenKind::Indent, Some(String::from("4")), TokenCategory::Whitespace),
             Token::new(TokenKind::Return, None, TokenCategory::Keyword),
             Token::new(TokenKind::Whitespace, Some(String::from("1")), TokenCategory::Whitespace),
@@ -194,32 +195,33 @@ mod tests {
             Token::new(TokenKind::Plus, None, TokenCategory::Operators),
             Token::new(TokenKind::Ident, Some(String::from("b")), TokenCategory::Identifier),
             Token::new(TokenKind::Whitespace, Some(String::from("3")), TokenCategory::Whitespace),
+            Token::new(TokenKind::Newline, None, TokenCategory::Whitespace),
             Token::new(TokenKind::Dedent, Some(String::from("4")), TokenCategory::Whitespace),
             Token::new(TokenKind::Eof, None, TokenCategory::Eof),
         ];
         test_single(input, tokens, LexerMode::Editor);
     }
 
-    fn test_single(input: &str, tokens: Vec<Token>, mode: LexerMode) {
+    fn test_single(input: &str, tokens_expected: Vec<Token>, mode: LexerMode) {
         let mut lexer = Lexer::new(Some(input), mode, false);
         lexer.current_indent = 4;
 
-        for token in tokens {
-            let current = lexer.tokenize_next_character();
-            println!("Expct: {:?}\n Actual: {:?}", token, current);
-            assert!(token == current.unwrap());
+        let tokens_lexer = lexer.tokenize(input);
+
+        let l1 = tokens_expected.len();
+        let l2 = tokens_lexer.len();
+
+        assert_eq!(l1, l2, "Mismatched lengths expected {}, received {}", l1, l2);
+
+        for n in 0..l1 {
+            let (t1, t2) = (&tokens_expected[n], &tokens_lexer[n]);
+            assert_eq!(t1, t2)
         }
     }
 
-    fn test_multiple(exps: Vec<(&str, Vec<Token>)>) {
-        for (input, expected) in exps {
-            let mut lexer = Lexer::new(Some(input), LexerMode::Ast, false);
-            for (i, exp_token) in expected.iter().enumerate() {
-                match lexer.tokenize_next_character() {
-                    Ok(token) => assert_eq!(&token, exp_token, "Test failed at token index: {}", i),
-                    Err(_) => panic!("Tokenization failed at index: {}", i),
-                }
-            }
+    fn test_multiple(exps: Vec<(&str, Vec<Token>)>, mode: LexerMode) {
+        for (input, tokens_expected) in exps {
+            test_single(input, tokens_expected, mode.clone());
         }
     }
 }
