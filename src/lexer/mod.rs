@@ -165,19 +165,20 @@ impl Lexer {
         };
 
         loop {
+            if self.read_position == self.input.len() { break }
+
             self.read_character();
-            if self.character == 0 {
-                break;
-            } else if self.character == end_character && self.input[self.position - 1] != 92 && self.double_peek() == end_sequence {
+
+            if self.character == end_character && self.input[self.position - 1] != 92 && self.double_peek() == end_sequence {
                 self.read_character();
                 self.read_character();
                 break;
             }
         }
 
-        let end_index = if self.character != 0 { self.position } else { self.position - 1 };
+        // let end_index = if self.character != 0 { self.position } else { self.position - 1 };
 
-        let sequence = &self.input[start_idx..=end_index];
+        let sequence = &self.input[start_idx..=self.position];
         sequence.iter().filter_map(|&code_point| std::char::from_u32(code_point)).collect()
     }
 
@@ -185,17 +186,17 @@ impl Lexer {
         let pos = self.position;
 
         loop {
+            if self.read_position == self.input.len() /* reached eof */ { break };
+
             self.read_character();
-            if (self.character == end_character && self.input[self.position - 1] != 92/* '\' */) || self.character == 0
-            /* eof */
-            {
+
+            if self.character == end_character && self.input[self.position - 1] != 92 /* '\' */ {
                 break;
             }
         }
 
         // let end_index = if self.character != 0 { self.position } else { self.position - 1 };
 
-        // let sequence = &self.input[pos..=end_index];
         let sequence = &self.input[pos..=self.position];
         sequence.iter().filter_map(|&code_point| std::char::from_u32(code_point)).collect()
     }
@@ -253,9 +254,7 @@ impl Lexer {
             },
             39 /* ''' */ => {
                 // it could be start of a string
-                let x = self.double_peek();
-                println!("{:?}", &x);
-                if x == Some(String::from("''")) {
+                if self.double_peek() == Some(String::from("''")) {
                     let start_idx = self.position;
                     self.read_character();
                     self.read_character();
@@ -604,7 +603,7 @@ impl Lexer {
 
         if self.debug_mode {
             let input_string = self.input.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(", ");
-            console_log!("[DEBUG] Input stream: {}", input_string);
+            console_log!("[DEBUG] Input stream:: {}", input_string);
         }
 
         if self.input.len() > 0 && self.input[0] == 10 {
@@ -619,6 +618,10 @@ impl Lexer {
                 }
                 tokens.push(token);
             }
+        }
+
+        if self.debug_mode {
+            console_log!("[DEBUG] Output tokens:: {:?}", tokens)
         }
 
         return tokens;

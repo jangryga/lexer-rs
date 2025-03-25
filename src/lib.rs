@@ -225,6 +225,43 @@ print(res)
     fn if_handles_strings() {
         let exps = vec![
             (
+                r#"''"#,
+                vec![
+                    Token::new(TokenKind::String, Some(String::from("''")), TokenCategory::Literal),
+                    Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+                ],
+            ),
+            (
+                r#"'''aaa''"#,
+                vec![
+                    Token::new(TokenKind::StringMultiline, Some(String::from("'''aaa''")), TokenCategory::Literal),
+                    Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+                ],
+            ),
+            (
+                r#"'''"#,
+                vec![
+                    Token::new(TokenKind::StringMultiline, Some(String::from("'''")), TokenCategory::Literal),
+                    Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+                ],
+            ),
+            (
+                r#"x=""#,
+                vec![
+                    Token::new(TokenKind::Ident, Some(String::from("x")), TokenCategory::Identifier),
+                    Token::new(TokenKind::Assign, None, TokenCategory::Operators),
+                    Token::new(TokenKind::String, Some(String::from("\"")), TokenCategory::Literal),
+                    Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+                ],
+            ),
+            (
+                "'abc'",
+                vec![
+                    Token::new(TokenKind::String, Some(String::from("'abc'")), TokenCategory::Literal),
+                    Token::new(TokenKind::Eof, None, TokenCategory::Eof),
+                ],
+            ),
+            (
                 r#"'''abc'''"#,
                 vec![
                     Token::new(TokenKind::StringMultiline, Some(String::from("'''abc'''")), TokenCategory::Literal),
